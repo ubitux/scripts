@@ -1,0 +1,25 @@
+#!/bin/sh
+
+set -eu
+
+src=${1:-.}
+dst=${2:-/tmp/out}
+
+cd "$src"
+
+find -regextype posix-egrep -iregex '.*\.(mp3|flac|wav|ogg)' | while read ifile; do
+    ofile="${ifile%.*}.mp3"
+    opath="$dst/$ofile"
+    if [ -f "$opath" ]; then
+        echo "SKIP $opath"
+        continue
+    fi
+    mkdir -p "$(dirname "$opath")"
+    if [ "$ifile" = "$ofile" ]; then
+        echo "COPY $ifile -> $opath"
+        cp "$ifile" "$opath"
+    else
+        echo "CONVERT $ifile -> $opath"
+        ffmpeg -nostdin -v error -i "$ifile" -map 0:a -b:a 128k "$opath"
+    fi
+done

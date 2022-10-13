@@ -1,0 +1,14 @@
+#!/bin/sh
+
+set -eu
+
+kernel_version=$(uname -r | cut -f1 -d-)
+pkg_version=$(pacman -Q linux | grep -oP '\d+\.\d+(\.\d+)?')
+if [ "$kernel_version" = "$pkg_version" ]; then
+    echo "kernel and package version: $kernel_version"
+else
+    echo "Version mismatch:"
+    echo "  kernel:  $kernel_version"
+    echo "  package: $pkg_version"
+    exit 1
+fi

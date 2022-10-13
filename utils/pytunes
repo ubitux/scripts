@@ -1,0 +1,92 @@
+#!/usr/bin/env python3
+
+import argparse
+import os
+import os.path as op
+import socket
+import subprocess
+import tempfile
+
+def _send_read(s, cmd):
+    bcmd = ('%s\n' % cmd).encode()
+    s.send(bcmd)
+    msg = ''
+    while not msg.endswith('OK\n'):
+        ret = s.recv(4096).decode()
+        if not ret:
+            break
+        msg += ret
+    return msg
+
+def _connect(host, port, timeout):
+    try:
+        s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+        s.settimeout(timeout)
+        s.connect((host, port))
+    except:
+        return None
+    return s
+
+def _get_current_playlist(s, passwd):
+    if passwd:
+        _send_read(s, 'password %s' % passwd)
+    msg = _send_read(s, 'playlistinfo')
+    _send_read(s, 'close')
+    prefix = 'file: '
+    return [line[len(prefix):] for line in msg.splitlines() if line.startswith(prefix)]
+
+def _download_convert_files(args, files):
+    dst_ext = '.' + args.audio_format.lower() if args.audio_format else None
+    n = len(files)
+    with tempfile.TemporaryDirectory() as dl_dir:
+        for i, fname in enumerate(files, 1):
+            dst_name = op.join(args.out_dir, fname)
+            root_name, ext = op.splitext(dst_name)
+            need_reencode = dst_ext and ext.lower() != dst_ext
+            if need_reencode:
+                dst_name = root_name + dst_ext
+                dst_dl_name = op.join(dl_dir, fname)
+            else:
+                dst_dl_name = dst_name
+
+            if op.exists(dst_name):
+                print('{} already exists, skipping'.format(dst_name))
+                continue
+
+            # Download
+            os.makedirs(op.dirname(dst_dl_name), 0o755, exist_ok=True)
+            remote_url = op.join(args.data_baseurl, fname)
+            print('[{}/{}] Downloading "{}" to "{}"'.format(i, n, remote_url, dst_dl_name))
+            remote_url = remote_url.replace('[', '\\[')
+            remote_url = remote_url.replace(']', '\\]')
+            subprocess.call(['scp', '-q', '-s', '-P', str(args.data_port), remote_url, dst_dl_name])
+
+            # Re-encode
+            if need_reencode:
+                os.makedirs(op.dirname(dst_name), 0o755, exist_ok=True)
+                print('[{}/{}] Converting {} to {}'.format(i, n, dst_dl_name, dst_name))
+                subprocess.call(['ffmpeg', '-nostdin', '-v', 'error', '-i', dst_dl_name,
+                                 '-b:a', str(args.audio_bitrate), dst_name])
+
+def _main(args):
+    s = _connect(args.mpd_host, args.mpd_port, args.mpd_timeout)
+    if not s:
+        print('Unable to connect to {}:{}'.format(args.mpd_host, args.mpd_port))
+        return
+    files = _get_current_playlist(s, args.mpd_password)
+    _download_convert_files(args, files)
+    s.close()
+
+if __name__ == '__main__':
+    parser = argparse.ArgumentParser()
+    parser.add_argument('--mpd-host', default='localhost', help='MPD hostname')
+    parser.add_argument('--mpd-port', type=int, default=6600, help='MPD port')
+    parser.add_argument('--mpd-password', help='MPD password')
+    parser.add_argument('--mpd-timeout', type=int, default=3, help='MPD connection timeout')
+    parser.add_argument('--data-baseurl', default='localhost:', help='SSH user@host:dir')
+    parser.add_argument('--data-port', type=int, default=22, help='SSH port')
+    parser.add_argument('--out-dir', default='my-music', help='local destination directory')
+    parser.add_argument('--audio-format', help='re-encode audio format')
+    parser.add_argument('--audio-bitrate', default=192, type=int, help='re-encode audio bitrate')
+    args = parser.parse_args()
+    _main(args)

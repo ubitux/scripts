@@ -1,0 +1,15 @@
+#!/bin/zsh
+
+set -eu
+
+mbase=/run/user/$(id -u)/gvfs
+for x in $(gio mount -li | grep activation_root=mtp://); do
+    bname=${${x#*mtp://}%*/}
+    mpoint=$mbase/mtp:host=$bname
+    if [ -d $mpoint ]; then
+        echo "$bname already mounted to $mpoint"
+    else
+        echo "Mounting $bname to $mpoint"
+        gio mount mtp://$bname
+    fi
+done

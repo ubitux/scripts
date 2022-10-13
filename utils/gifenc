@@ -1,0 +1,27 @@
+#!/bin/sh
+
+set -eu
+
+while getopts 'f:s:dr' o; do
+    case $o in
+        f) fps=$OPTARG ;;
+        s) scale=$OPTARG ;;
+        d) gen_opts="stats_mode=diff" ;;
+        r) use_opts="diff_mode=rectangle" ;;
+    esac
+done
+shift $((OPTIND-1))
+ifile=$1
+ofile=$2
+filters="copy"
+palettegen="palettegen"
+paletteuse="paletteuse"
+palette="/tmp/palette.png"
+test -n "${fps:-}" && filters="${filters},fps=${fps}"
+test -n "${scale:-}" && filters="${filters},scale=${scale}:flags=lanczos"
+test -n "${gen_opts:-}" && palettegen="${palettegen}=${gen_opts}"
+test -n "${use_opts:-}" && paletteuse="${paletteuse}=${use_opts}"
+
+set -x
+ffmpeg -v warning -i "$ifile" -vf "$filters,$palettegen" -y $palette
+ffmpeg -v warning -i "$ifile" -i $palette -lavfi "${filters}[x];[x][1:v]$paletteuse" -y "$ofile"
