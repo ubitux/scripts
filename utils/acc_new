@@ -1,0 +1,27 @@
+#!/bin/sh
+
+set -eu
+
+. "$(dirname "$0")/config"
+
+if [ $# -ne 1 ]; then
+    echo "Need an identifier as argument" 1>&2
+    exit 1
+fi
+
+id=$1
+genid="$id-$(pwgen -A -0 8 1)"
+passwd="$(pwgen 20)"
+
+echo "Profile info:"
+echo "    id:     $id"
+echo "    genid:  $genid"
+echo "    passwd: $passwd"
+echo "    email:  $genid@$ACC_MAIL_DOMAIN"
+echo
+echo "Create mail alias:"
+echo "    acc_add_mail_alias $id $genid"
+echo
+echo "Register account:"
+echo "    acc_register $id $genid $passwd"
+echo

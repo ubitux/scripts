@@ -1,0 +1,12 @@
+#!/bin/sh
+
+set -ue
+
+if [ $# -ne 1 ]; then
+    echo "Usage: $0 <dir>"
+    exit 1
+fi
+
+find "$1" -type d -print0 | xargs -0 chmod 755
+find "$1" -type f -print0 | xargs -0 chmod 644
+find "$1" -regextype posix-egrep -iregex '.*\.(cue|log|m3u|toc)' -print -delete

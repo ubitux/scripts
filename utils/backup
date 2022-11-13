@@ -1,0 +1,14 @@
+#!/bin/sh
+
+set -eu
+
+. "$(dirname "$0")/config"
+
+host=$1
+server_password="$(kp "$BACKUP_KEYPASS_BASE_SERVERS/$host")"
+backup_password="$(kp "$BACKUP_KEYPASS_BASE_BACKUPS/$host")"
+shift 1
+
+RESTIC_REPOSITORY="rest:https://$host:$server_password@$BACKUP_HOST/$host" \
+RESTIC_PASSWORD="$backup_password" \
+    restic --cacert="$BACKUP_CACERT" "$@"

@@ -1,0 +1,13 @@
+#!/bin/sh
+
+set -ue  # -e is very important because we don't want to remove if the data import failed
+
+. "$(dirname "$0")/config"
+. "$(dirname "$0")/helpers/android"
+
+mtp_mount
+wait_device "$ANDROID_BASEDIR"
+
+[ ! -f "$ANDROID_QUICKNOTES_SRC" ] && exit 0
+cat "$ANDROID_QUICKNOTES_SRC" >> "$ANDROID_QUICKNOTES_DST"
+rm -f "$ANDROID_QUICKNOTES_SRC"

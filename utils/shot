@@ -1,0 +1,14 @@
+#!/bin/sh
+
+set -eu
+
+. "$(dirname "$0")/config"
+
+f=$(shotl "$@")
+test -z "$f" && exit 1
+if scp "$f" "$SHOT_HOST:$SHOT_DST"; then
+    echo "Shot: $SHOT_URL/$(urlencode "$f")"
+    rm -f "$f"
+else
+    echo "Unable to upload $f"
+fi

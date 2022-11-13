@@ -1,0 +1,7 @@
+#!/bin/sh
+
+set -eu
+
+. "$(dirname "$0")/config"
+
+grep -o '^|\s*[0-9\.]\+\s*|' "$NOTES_DIR/Weight_Stats.md" | tr -d '| ' | gnuplot -p -e 'set grid; set tics; set xl "day"; set yl "kg"; p "-" w l'

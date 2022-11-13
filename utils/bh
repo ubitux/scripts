@@ -1,0 +1,10 @@
+#!/bin/sh
+
+set -eu
+
+. "$(dirname "$0")/config"
+
+scp -r "$@" "$BLACKHOLE_HOST:$BLACKHOLE_DST"
+for f; do
+    echo "$BLACKHOLE_URL/$(urlencode "$(basename "$f")")"
+done

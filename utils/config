@@ -1,0 +1,48 @@
+#!/bin/sh
+
+# Android tools: android_*
+ANDROID_BASEDIR="/run/user/1000/gvfs/mtp:host=Android_XXXXXX"  # gvfs mount point for the device
+ANDROID_FILEBROWSER="nnn"
+ANDROID_QUICKNOTES_SRC="$ANDROID_BASEDIR/Documents/markor/QuickNote.md"
+ANDROID_QUICKNOTES_DST="$HOME/notes/Scratchpad.md"
+ANDROID_DCIM_SRC="$ANDROID_BASEDIR/DCIM"
+ANDROID_DCIM_DST="$HOME/DCIM"
+
+# Blackhole tool: bh
+BLACKHOLE_HOST="myserver"  # destination host for ssh/scp
+BLACKHOLE_DST="/srv/http/blackhole/"  # where to upload the files on the host
+BLACKHOLE_URL="https://blackhole.myserver.info/"  # public URL for accessing the files
+
+# Paste tool: bpaste
+PASTE_HOST="myserver"  # destination host for ssh/scp
+PASTE_DST="/srv/http/pastes/"  # where to write the pastes on the host
+PASTE_URL="https://pastes.myserver.info/"  # public URL for accessing the pastes
+
+# Screenshot tools: shot*
+SHOT_HOST="myserver"  # destination host for ssh/scp
+SHOT_DST="/srv/http/screenshots/"  # where to upload the screenshots on the host
+SHOT_URL="https://screenshots.myserver.info/"  # public URL for seeing the screenshots
+SHOT_EDITOR="pinta"  # image editor (could be gimp or something else)
+
+# Pass tools: kp*
+KEYPASS_PATH="$HOME/keypass"  # git repository with a password store and a GNUPG dir
+KEYPASS_STORE_DIR="$KEYPASS_PATH/password-store"
+KEYPASS_GNUPGHOME="$KEYPASS_PATH/gnupg"
+
+# Backup tools: backup*
+BACKUP_HOST="backups.myserver.info:3000"  # remote restic host to push backups to
+BACKUP_KEYPASS_BASE_SERVERS="infra/myserver/rest-servers"  # pass dir for backup server passwords
+BACKUP_KEYPASS_BASE_BACKUPS="infra/restic"  # pass dir for restic backup passwords
+BACKUP_CACERT="$HOME/infra/backups-myserver-info.cert.pem"
+
+# Account generation: acc*
+ACC_INFRA_PATH="$HOME/infra"
+ACC_INFRA_ALIASES="machines/myserver/files/etc/smtpd/aliases"
+ACC_MAIL_HOST="myserver"
+ACC_MAIL_USER="root"
+ACC_MAIL_ALIASES="/etc/smtpd/aliases"
+ACC_MAIL_DOMAIN="myserver.info"
+ACC_MAIL_ACCOUNT="me"  # main account to alias to
+
+# Notes
+NOTES_DIR="$HOME/notes"

@@ -1,0 +1,13 @@
+#!/bin/sh
+
+set -eu
+
+. "$(dirname "$0")/config"
+
+cd "$NOTES_DIR"
+
+set -x
+git diff-index --quiet HEAD
+$EDITOR +VimwikiMakeDiaryNote +w +VimwikiDiaryIndex +VimwikiDiaryGenerateLinks +q
+git add diary
+git commit -m "WIP: $(date -I)"

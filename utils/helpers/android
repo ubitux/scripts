@@ -1,0 +1,12 @@
+#!/bin/sh
+
+# FIXME find a better way of waiting for the device instead of polling like a
+# retard
+wait_device() {
+    basedir="$1"
+    while ! stat "$basedir" >/dev/null 2>&1; do
+        printf .
+        sleep 0.1
+    done
+    echo "$basedir ready"
+}

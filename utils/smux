@@ -1,0 +1,11 @@
+#!/bin/sh
+
+set -ue
+
+host=$1
+sess=$2
+tm='tmux -u'
+tm_cond="$tm has -t $sess"
+tm_attach="$tm attach -d -t $sess"
+tm_new="$tm new -s $sess"
+ssh "$host" -t "if $tm_cond; then $tm_attach; else $tm_new; fi"

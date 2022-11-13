@@ -1,0 +1,12 @@
+#!/bin/sh
+
+term_switch() {
+    family=$1
+    style=$2
+    size=$3
+    term_cfg=$HOME/.config/alacritty/alacritty.yml
+    grep -q "$family" "$term_cfg" && return 0
+    sed -e "s/family: .\+/family: $family/" \
+        -e "s/style: .\+/style: $style/" \
+        -e "s/size: .\+/size: $size/" -i "$term_cfg"
+}

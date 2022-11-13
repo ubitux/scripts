@@ -1,0 +1,13 @@
+#!/bin/sh
+
+set -eu
+
+. "$(dirname "$0")/config"
+
+cd "$NOTES_DIR"
+pages=$(find . -name '*.md' | wc -l)
+pages_nodiary=$(find . -name '*.md' | grep -cv 'diary/')
+lines=$(find . -name '*.md' -print0 | xargs -0 cat | wc -l)
+words=$(find . -name '*.md' -print0 | xargs -0 cat | wc -w)
+links=$(git grep -P 'https?://'| grep -cv TDL_links)
+echo "pages:${pages} (${pages_nodiary} without diary) lines:${lines} words:${words} links:${links}"

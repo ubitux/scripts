@@ -1,0 +1,14 @@
+#!/bin/sh
+
+set -ue  # -e is very important because we don't want to remove if the data import failed
+
+. "$(dirname "$0")/config"
+. "$(dirname "$0")/helpers/android"
+
+mtp_mount
+wait_device "$ANDROID_BASEDIR"
+
+[ ! -d "$ANDROID_DCIM_SRC" ] && exit 0
+rsync -av --progress "$ANDROID_DCIM_SRC/." "$ANDROID_DCIM_DST"
+find ~/DCIM -type f -print0 | xargs -0 chmod 644
+rm -rf "$ANDROID_DCIM_SRC"

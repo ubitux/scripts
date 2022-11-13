@@ -1,0 +1,21 @@
+#!/bin/sh
+
+set -eu
+
+. "$(dirname "$0")/config"
+
+id=$1
+genid=$2
+passwd=$3
+
+echo ":: Checking if $KEYPASS_PATH repository is clean"
+git -C "$KEYPASS_PATH" diff-index --quiet HEAD
+
+dstf=$KEYPASS_STORE_DIR/$id.gpg
+echo ":: Checking if $id entry doesn't already exist"
+test -f "$dstf" && false
+
+set -x
+printf "%s\n%s\n" "$passwd" "$genid" | kp insert -m "$id"
+git -C "$KEYPASS_PATH" add "$dstf"
+git -C "$KEYPASS_PATH" commit -m "Add $id"

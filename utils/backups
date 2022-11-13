@@ -1,0 +1,11 @@
+#!/bin/sh
+
+set -eu
+
+. "$(dirname "$0")/config"
+
+hosts=$(ls "$KEYPASS_STORE_DIR/$BACKUP_KEYPASS_BASE_BACKUPS" | sed 's/\.gpg$//')
+for host in ${hosts}; do
+    echo ":: $host"
+    backup "$host" "$@"
+done

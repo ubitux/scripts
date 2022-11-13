@@ -1,0 +1,10 @@
+#!/bin/sh
+
+set -eu
+
+. "$(dirname "$0")/config"
+
+f=$(date +%F-%H%M%S)-${1:-$(pwgen)}
+rf="$PASTE_DST/$f"
+ssh "$PASTE_HOST" "cat > $rf"
+echo "Paste: $PASTE_URL/$f"

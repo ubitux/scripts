@@ -1,0 +1,24 @@
+#!/bin/sh
+
+set -eu
+
+. "$(dirname "$0")/config"
+
+id=$1
+genid=$2
+
+echo ":: Checking if $ACC_INFRA_PATH repository is clean"
+git -C "$ACC_INFRA_PATH" diff-index --quiet HEAD
+
+echo ":: Checking SMTPD aliases consistency between local and $ACC_MAIL_HOST"
+ssh $ACC_MAIL_USER@$ACC_MAIL_HOST cat "$ACC_MAIL_ALIASES" | diff -u - "$ACC_INFRA_PATH/$ACC_INFRA_ALIASES"
+
+echo ":: Checking existing aliases for $id*"
+grep -m1 "^$id" "$ACC_INFRA_PATH/$ACC_INFRA_ALIASES" && false
+
+echo ":: Adding mail alias $genid on $ACC_MAIL_ACCOUNT"
+set -x
+echo "$genid: $ACC_MAIL_ACCOUNT" >> "$ACC_INFRA_PATH/$ACC_INFRA_ALIASES"
+git -C "$ACC_INFRA_PATH" commit "$ACC_INFRA_ALIASES" -m "$ACC_MAIL_HOST: add $id alias"
+scp "$ACC_INFRA_PATH/$ACC_INFRA_ALIASES" "$ACC_MAIL_USER@$ACC_MAIL_HOST:$ACC_MAIL_ALIASES"
+ssh "$ACC_MAIL_USER@$ACC_MAIL_HOST" smtpctl update table aliases
