@@ -18,7 +18,7 @@ palettegen="palettegen"
 paletteuse="paletteuse"
 palette="/tmp/palette.png"
 test -n "${fps:-}" && filters="${filters},fps=${fps}"
-test -n "${scale:-}" && filters="${filters},scale=${scale}:flags=lanczos"
+test -n "${scale:-}" && filters="${filters},scale=${scale}:flags=lanczos:force_original_aspect_ratio=decrease"
 test -n "${gen_opts:-}" && palettegen="${palettegen}=${gen_opts}"
 test -n "${use_opts:-}" && paletteuse="${paletteuse}=${use_opts}"
 
