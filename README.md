@@ -107,7 +107,8 @@ risk.
 ### Config
 
 Some scripts depend on a config file. For those, the file [template config
-file](utils/config) needs to be adjusted appropriately.
+file](utils/config.in) needs to be copied to a `config` file and adjusted
+appropriately.
 
 
 ## Punctual scripts (oneshot directory)
