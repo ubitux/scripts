@@ -54,6 +54,9 @@ on `stow`.
     + depends on the [config](#Config)
     + used exclusively as a pipe (`ls -l | bpaste` or `bpaste my-great-file <
       my.file`: the optional argument is only here to tweak the URL a bit
+- [c](utils/c): calendar integration with `remind` and my notes (`rem` specs is
+  extracted from a markdown quote); it watches for changes on the file and
+  reload the calendar view when it happens
 - [conv-to-mp3](utils/conv-to-mp3): find all music files and convert them to
   mp3 (if needed, with FFmpeg), preserving the file tree.
 - [gifenc](utils/gifenc): encode a video to a GIF file using FFmpeg and the

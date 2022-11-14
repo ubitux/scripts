@@ -1,0 +1,9 @@
+#!/bin/sh
+
+set -eu
+
+. "$(dirname "$0")/config"
+
+mkd_file="$NOTES_DIR/Reminders.md"
+
+echo "$mkd_file" | entr /bin/sh -c "tput clear;sed -n '1,/^\`\`\`rem/d;/^\`\`\`$/q;p' $mkd_file | remind -m -cl -@2 -b1 -"
