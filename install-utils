@@ -1,0 +1,5 @@
+#!/bin/sh
+
+set -uex
+
+stow --verbose utils --target ~/.local/bin

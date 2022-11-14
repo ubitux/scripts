@@ -14,6 +14,9 @@ risk.
 
 ## Daily scripts (utils directory)
 
+These scripts are deployed using [install-utils](install-utils), which relies
+on `stow`.
+
 - [acc_add_mail_alias](utils/acc_add_mail_alias): create a mail alias; this is
   generally called after `acc_new`
     + depends on the [config](#Config), an OpenSMTPD setup, and a local
