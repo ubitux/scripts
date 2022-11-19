@@ -6,4 +6,4 @@ set -eu
 
 mkd_file="$NOTES_DIR/Reminders.md"
 
-echo "$mkd_file" | entr /bin/sh -c "tput clear;sed -n '1,/^\`\`\`rem/d;/^\`\`\`$/q;p' $mkd_file | remind -m -cl -@2 -b1 -"
+echo "$mkd_file" | entr /bin/sh -c "tput clear;sed -n '1,/^\`\`\`rem/d;/^\`\`\`$/q;p' $mkd_file | remind -m -cl -@2 -b1 - $@"
