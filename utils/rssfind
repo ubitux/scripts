@@ -1,0 +1,3 @@
+#!/bin/sh
+set -ue
+curl -sL "$1" | htmlq 'link[type="application/rss+xml"], link[type="application/atom+xml"]'
