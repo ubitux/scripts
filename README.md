@@ -29,7 +29,7 @@ on `stow`.
 - [acc_register](utils/acc_register): register an account and its password in
   a `pass` keychain
     + depends on the [config](#Config), the `kp` setup
-- [android_open](utils/android_open): mount the Android device and open file
+- [android_files](utils/android_files): mount the Android device and open file
   browser on its mount point
     + depends on the [config](#Config) and `mtp_mount`
 - [android_sync_dcim](utils/android_sync_dcim): mount the Android device, copy
