@@ -6,4 +6,7 @@ set -eu
 
 mkd_file="$NOTES_DIR/Reminders.md"
 
-echo "$mkd_file" | entr /bin/sh -c "tput clear;sed -n '1,/^\`\`\`rem/d;/^\`\`\`$/q;p' $mkd_file | remind -m -cl -@2 -b1 - $@"
+# -cu+3: display calendar, in unicode, with a 3 weeks visibility
+# -b1: 24h time format
+# -m: start calendar with monday
+echo "$mkd_file" | entr /bin/sh -c "tput clear;sed -n '1,/^\`\`\`rem/d;/^\`\`\`$/q;p' $mkd_file | remind -cu+3 -b1 -m '-i\$SuppressLRM=1' - $@"
