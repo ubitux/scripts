@@ -4,4 +4,5 @@ set -eu
 
 . "$(dirname "$0")/config"
 
-grep -o '^|\s*[0-9\.]\+\s*|' "$NOTES_DIR/Weight_Stats.md" | tr -d '| ' | gnuplot -p -e 'set grid; set tics; set xl "day"; set yl "kg"; p "-" w l'
+grep -oE '\s*[0-9]{4}-[0-9]{2}-[0-9]{2}\s*\|\s*[0-9\.]+' "$NOTES_DIR/Weight_Stats.md" | tr '|' ' ' | \
+  gnuplot -p -e 'set grid; set tics; set xlabel "date"; set ylabel "kg"; set xdata time; set timefmt "%Y-%m-%d"; set format x "%Y-%m-%d"; plot "-" using 1:2 with lines title "weight"'
