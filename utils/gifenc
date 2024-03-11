@@ -23,5 +23,5 @@ test -n "${gen_opts:-}" && palettegen="${palettegen}=${gen_opts}"
 test -n "${use_opts:-}" && paletteuse="${paletteuse}=${use_opts}"
 
 set -x
-ffmpeg -v warning -i "$ifile" -vf "$filters,$palettegen" -y $palette
+ffmpeg -v warning -i "$ifile" -vf "$filters,$palettegen" -frames:v 1 -update 1 -y $palette
 ffmpeg -v warning -i "$ifile" -i $palette -lavfi "${filters}[x];[x][1:v]$paletteuse" -y "$ofile"
