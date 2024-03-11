@@ -3,7 +3,7 @@
 set -eu
 
 mbase=/run/user/$(id -u)/gvfs
-for x in $(gio mount -li | grep activation_root=mtp://); do
+for x in $(gio mount -li | grep activation_root=mtp://|grep -v keyboard); do
     bname=${${x#*mtp://}%*/}
     mpoint=$mbase/mtp:host=$bname
     if [ -d $mpoint ]; then
