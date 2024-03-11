@@ -4,9 +4,11 @@ set -eu
 
 fullscreen=0
 transcode=1
-while getopts 'fn' o; do
+audio=0
+while getopts 'fan' o; do
     case $o in
         f) fullscreen=1 ;;
+        a) audio=1 ;;
         n) transcode=0 ;;
     esac
 done
@@ -25,6 +27,10 @@ if [ $fullscreen -eq 1 ]; then
     cmd="$base_cmd -s \$(xrandr | grep '*' | awk '{ print \$1 }') -i :0.0"
 else
     cmd="$base_cmd \$(slop -f '-s %wx%h -i :0.0+%x,%y')"
+fi
+
+if [ $audio -eq 1 ]; then
+    cmd="$cmd -f pulse -ac 2 -i 48"
 fi
 
 cmd="$cmd -preset ultrafast -qp 0"  # x264 lossless
