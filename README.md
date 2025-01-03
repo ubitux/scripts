@@ -39,6 +39,8 @@ on `stow`.
   device, and append the "quick notes" into the local notes scratchpad, then
   delete the file from the device
     + depends on the [config](#Config) and `mtp_mount`
+- [arec](utils/arec): record an opus file from the mic input (made for Anki
+  because the flatpak recording doesn't work for some reason)
 - [backup](utils/backup): interrogate one backup (wrapper on top of `restic`)
     + depends on the [config](#Config), the `kp` setup, a restic server, and
       probably more stuff I'm forgetting

@@ -1,0 +1,8 @@
+#!/bin/sh
+set -x
+rec=/tmp/rec.opus
+ffmpeg -f pulse -ac 2 -i default -y "$rec"
+sum=$(md5sum /tmp/rec.opus|cut -f1 -d' ')
+out="/tmp/rec-$sum.opus"
+mv "$rec" "$out"
+mpv "$out"
