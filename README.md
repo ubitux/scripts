@@ -65,6 +65,8 @@ on `stow`.
   reload the calendar view when it happens
 - [conv-to-mp3](utils/conv-to-mp3): find all music files and convert them to
   mp3 (if needed, with FFmpeg), preserving the file tree.
+- [fixday](utils/fixday): if I run `newday` too late, I can fix it with this
+  script.
 - [gifenc](utils/gifenc): encode a video to a GIF file using FFmpeg and the
   palette mechanism, supports fps, scale and a few other flags
 - [hex](utils/hex): convert hex strings to their ASCII/binary representation

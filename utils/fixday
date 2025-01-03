@@ -1,0 +1,24 @@
+#!/bin/sh
+
+set -eu
+
+. "$(dirname "$0")/config"
+
+
+if [ $# -ne 1 ]; then
+    echo "Need a new date as argument in the format YYYY-MM-DD" 1>&2
+    exit 1
+fi
+
+cd "$NOTES_DIR"
+
+set -x
+git diff-index --quiet HEAD
+
+datefixed="$1"
+datetofix=$(git log --format="format:%s" -n1 | cut -f2 -d' ')
+
+git mv "diary/$datetofix.md" "diary/$datefixed.md"
+sed "s/$datetofix/$datefixed/g" -i diary/diary.md
+git add diary/diary.md
+git commit --amend -m "WIP: $datefixed" --date="$datefixed"
