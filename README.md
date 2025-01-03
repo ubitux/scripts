@@ -95,6 +95,8 @@ on `stow`.
   locally, and eventually convert them to the specified audio format
 - [record](utils/record): capture a selection (window or free-form) or the full
   screen and reencode it into a web-shareable file, using FFmpeg; X11 only
+- [rgb2float](utils/rgb2float): convert `#RRGGBB` to `r,g,b` format where `r`,
+  `g` and `b` are floats
 - [rssfind](utils/rssfind): find RSS links given an URL, depends on `curl` and
   `htmlq`
 - [shot](utils/shot): takes a screenshot using `shot` and uploads it
