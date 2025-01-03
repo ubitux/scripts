@@ -1,0 +1,5 @@
+#!/bin/sh
+
+setxkbmap eu
+xmodmap "$HOME/.Xmodmap"
+xset r rate 180 70
