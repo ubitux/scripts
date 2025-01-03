@@ -1,0 +1,11 @@
+#!/bin/sh
+
+set -ue
+
+. "$(dirname "$0")/config"
+. "$(dirname "$0")/helpers/android"
+
+mtp_mount
+wait_device "$ANDROID_BASEDIR"
+
+cp -v "$1" "$ANDROID_VIDEOS_DIR"

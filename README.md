@@ -32,6 +32,10 @@ on `stow`.
 - [android_files](utils/android_files): mount the Android device and open file
   browser on its mount point
     + depends on the [config](#Config) and `mtp_mount`
+- [android_send_pic](utils/android_send_pic): upload a picture to the Android
+  device
+- [android_send_vid](utils/android_send_vid): upload a video to the Android
+  device
 - [android_sync_dcim](utils/android_sync_dcim): mount the Android device, copy
   its `DCIM` directory locally, and remove them from the device
     + depends on the [config](#Config) and `mtp_mount`
