@@ -2,4 +2,5 @@
 
 set -uex
 
+cd "$(dirname "$0")"
 stow --verbose utils --target ~/.local/bin
