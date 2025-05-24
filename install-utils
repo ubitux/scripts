@@ -3,4 +3,4 @@
 set -uex
 
 cd "$(dirname "$0")"
-stow --verbose utils --target ~/.local/bin
+stow --verbose bin --target ~/.local/bin
