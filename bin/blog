@@ -1,0 +1,450 @@
+#!/usr/bin/env python
+
+import datetime
+import email.utils
+import os
+import subprocess
+import sys
+import tomllib
+import unicodedata
+import urllib.parse
+from collections import Counter
+from dataclasses import dataclass
+from functools import cached_property
+from html import escape
+from pathlib import Path
+from textwrap import dedent
+from typing import Self
+
+from markdown_it import MarkdownIt
+from mdit_py_plugins import admon, dollarmath
+
+_MD = (
+    MarkdownIt()
+    .enable("table")
+    .use(dollarmath.dollarmath_plugin)
+    .use(admon.admon_plugin)
+)
+
+
+@dataclass(slots=True)
+class _Config:
+    domain: str
+    title: str
+    rss_title: str
+    src_content: Path
+    www_dir: Path
+    remote_dst: str
+    article_footer: str
+    page_footer: str
+
+    @classmethod
+    def get(cls) -> Self:
+        cfg_path = (
+            Path(os.environ.get("XDG_CONFIG_HOME", Path.home() / ".config"))
+            / "blog"
+            / "blog.toml"
+        )
+        if not cfg_path.exists():
+            cfg_data = {}
+        else:
+            with open(cfg_path, "rb") as cfg_file:
+                cfg_data = tomllib.load(cfg_file)
+        return cls.from_cfg(cfg_data)
+
+    @classmethod
+    def from_cfg(cls, cfg: dict) -> Self:
+        domain = cfg.get("domain", "example.com")
+        title = cfg.get("title", "my/blog")
+        rss_title = cfg.get("rss_title", title)
+        src_content = Path(cfg.get("src_content", "~/blog/content")).expanduser()
+        www_dir = Path(cfg.get("www_dir", "~/blog/www")).expanduser()
+        remote_dst = cfg.get("remote_dst", "user@example.com:/srv/http/blog")
+        article_footer_md = cfg.get("article_footer_md")
+        article_footer = _MD.render(article_footer_md) if article_footer_md else ""
+        page_footer = cfg.get("page_footer_html", "")
+        return cls(
+            domain,
+            title,
+            rss_title,
+            src_content,
+            www_dir,
+            remote_dst,
+            article_footer,
+            page_footer,
+        )
+
+
+@dataclass
+class _Entry:
+    ifile: Path
+    index: int
+    dtime: datetime.datetime
+    title: str
+    tags: list[str]
+    draft: bool
+    content: str
+
+    _HEADER_MARKER = "+++\n"
+
+    @classmethod
+    def from_file(cls, ifile: Path) -> Self:
+        with open(ifile) as f:
+            rawcontent = f.read()
+        assert rawcontent.startswith(cls._HEADER_MARKER)
+        rawcontent = rawcontent.removeprefix(cls._HEADER_MARKER)
+        header, rawcontent = rawcontent.split(cls._HEADER_MARKER)
+        header_data = tomllib.loads(header)
+        index = int(ifile.name.split("-", maxsplit=1)[0])
+        title = header_data["title"]
+        tags = header_data.get("tags", [])
+        draft = header_data.get("draft", False)
+        dtime = header_data["date"]
+        content = _MD.render(rawcontent.lstrip())
+        return cls(ifile, index, dtime, title, tags, draft, content)
+
+    @cached_property
+    def date(self) -> str:
+        return self.dtime.strftime("%Y-%m-%d")
+
+    @cached_property
+    def ofile_rel(self) -> Path:
+        norm_title = unicodedata.normalize("NFKD", self.title)
+        url_base = "-".join(norm_title.strip().lower().replace("/", " ").split())
+        return Path("p") / f"{self.index}-{url_base}.html"
+
+    @cached_property
+    def href(self) -> str:
+        return urllib.parse.quote(self.ofile_rel.as_posix())
+
+    def rss(self, cfg: _Config) -> str:
+        url = f"http://{cfg.domain}/"
+        link = url + self.href
+        guid = link
+        date = email.utils.formatdate(int(self.dtime.timestamp()))
+        content = self.content
+        content = content.replace("src='/", f"src='{url}")
+        content = content.replace('src="/', f'src="{url}')
+        content = content.replace("href='/", f"href='{url}")
+        content = content.replace('href="/', f'href="{url}')
+        desc = escape(content)
+        return (
+            dedent(
+                f"""\
+                <item>
+                 <guid>{guid}</guid>
+                 <link>{link}</link>
+                 <title>{self.title}</title>
+                 <pubDate>{date}</pubDate>
+                 <description>"""
+            )
+            + desc
+            + dedent(
+                """
+                 </description>
+                </item>"""
+            )
+        )
+
+    @cached_property
+    def html(self):
+        tags = ", ".join(
+            f'<a href="/x/index-{tag}.html">{tag}</a>' for tag in self.tags
+        )
+        return (
+            dedent(
+                f"""\
+                <h1>{self.title}</h1>
+                <div id="meta-article">
+                 <div class="date">{self.date}</div>
+                 <div class="tags">{tags}</div>
+                </div>
+                """
+            )
+            + f"<article>{self.content}</article>\n"
+        )
+
+
+class _Blog:
+    __slots__ = ("_cfg", "_entries", "_keywords")
+
+    _INDEX_LINK = '<p>← <a href="/index.html">index</a></p>'
+    _MATH_JS = dedent(
+        """
+        <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.22/dist/katex.min.css" integrity="sha384-5TcZemv2l/9On385z///+d7MSYlvIEw9FuZTIdZ14vJLqWphw7e7ZPuOiCHJcFCP" crossorigin="anonymous">
+        <script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.22/dist/katex.min.js" integrity="sha384-cMkvdD8LoxVzGF/RPUKAcvmm49FQ0oxwDF3BGKtDXcEc+T1b2N+teh/OJfpU0jr6" crossorigin="anonymous"></script>
+        <script>
+        document.addEventListener("DOMContentLoaded", (event) => {
+          const math_elems = document.getElementsByClassName("math");
+          for (let i = 0; i < math_elems.length; i++) {
+            const element = math_elems[i];
+            const display_mode = element.classList.contains("inline") ? false : true;
+            element.innerHTML = katex.renderToString(element.innerText, {displayMode: display_mode});
+          }
+        });
+        </script>
+        """
+    )
+    _TPL_BASE = dedent(
+        """\
+        <!doctype html>
+        <html lang="en">
+         <head>
+          <title>{title}</title>
+          <link rel="icon" type="image/png" href="/favicon.png" />
+          <meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
+          <link href="/rss.xml" rel="alternate" type="application/rss+xml" title="{cfg.domain}" />
+          <link rel="stylesheet" href="/github-dark.min.css">
+          <script defer src="/highlight.min.js" onload="hljs.highlightAll();"></script>
+          <link rel="stylesheet" type="text/css" href="/style.css" />{js}
+          <meta name="keywords" content="{keywords}" />
+          <meta name="viewport" content="width=device-width" />
+         </head>
+         <body>
+         <div id="content">
+        {content}
+         </div>
+         <footer>
+         {cfg.page_footer}
+         </footer>
+         </body>
+        </html>"""
+    )
+
+    _TPL_RSS = dedent(
+        """\
+        <?xml version="1.0" encoding="utf-8"?>
+        <rss version="2.0">
+         <channel xmlns:atom="http://www.w3.org/2005/Atom">
+          <atom:link href="http://{cfg.domain}/rss.xml" rel="self" type="application/rss+xml" />
+          <title>{cfg.rss_title}</title>
+          <description>Default feed for {cfg.domain}</description>
+          <link>http://{cfg.domain}/</link>
+        {content}
+         </channel>
+        </rss>"""
+    )
+
+    _TPL_INDEX_ENTRY = dedent(
+        """\
+        <article class="ref">
+         <a class="title" href="/{e.href}">{e.title}</a>
+         <div class="meta-index"><div class="date">{e.date}</div> <div class="tags">{tags}</div></div>
+        </article>"""
+    )
+
+    _TPL_FOOTER = dedent(
+        """\
+         <hr>
+         {cfg.article_footer}
+        """
+    )
+
+    def __init__(self, cfg: _Config):
+        self._cfg = cfg
+        self._entries = self._find_content(cfg.src_content)
+        c = Counter(sorted(tag for entry in self._entries for tag in entry.tags))
+        self._keywords = ", ".join(tag for tag, _ in c.most_common())
+
+    def _find_content(self, content_dir: Path) -> list[_Entry]:
+        ret = []
+        if not content_dir.exists():
+            print(f"Content dir {content_dir} not found")
+            return ret
+        for f in content_dir.iterdir():
+            if not f.name.endswith(".md"):
+                continue
+            entry = _Entry.from_file(f)
+            if entry.draft:
+                continue
+            ret.append(entry)
+        ret.sort(key=lambda e: e.dtime, reverse=True)
+        return ret
+
+    def new_post(self, base_name: str):
+        index = (
+            [e for e in self._entries if not e.draft][0].index + 1
+            if self._entries
+            else 1
+        )
+        path = self._cfg.src_content / f"{index:03}-{base_name}.md"
+        assert not path.exists()
+        date = datetime.datetime.now().isoformat()
+        date, _ = date.rsplit(".", maxsplit=1)  # drop .XXXXXX
+        content = dedent(
+            f"""\
+            +++
+            title = "The Title"
+            date = {date}
+            tags = []
+            draft = true
+            +++
+
+            """
+        )
+        with open(path, "w") as f:
+            f.write(content)
+        print(f"created {path}")
+
+    def update_staging(self, cfg: _Config):
+        if not cfg.www_dir.exists():
+            print(f"www dir {cfg.www_dir} not found")
+            return
+        _run_cmd(
+            [
+                "rsync",
+                "-av",
+                str(cfg.src_content) + "/.",
+                "--exclude",
+                "*.md",
+                cfg.www_dir,
+            ]
+        )
+        bin_dir = Path(__file__).resolve().parent
+        data_dir = bin_dir.parent / "share" / "blog"
+        _run_cmd(["rsync", "-av", str(data_dir) + "/.", cfg.www_dir])
+        post_pages = self._write_post_pages(cfg)
+        index_pages = self._write_index_pages(cfg)
+        self._cleanup(cfg, index_pages, post_pages)
+        self._write_rss(cfg)
+
+    def _write_post_pages(self, cfg: _Config) -> list[Path]:
+        print("\n:: write pages")
+        files = []
+        entry_head = self._INDEX_LINK
+        entry_foot = self._TPL_FOOTER.format(cfg=cfg) + self._INDEX_LINK
+        for entry in self._entries:
+            ofile = cfg.www_dir / entry.ofile_rel
+            print("   writing %-35s -> %s" % (entry.ifile, ofile))
+            keywords = ", ".join(entry.tags)
+            with open(ofile, "w") as page:
+                content = entry_head + entry.html + entry_foot
+                js = self._MATH_JS if 'class="math' in content else ""
+                page.write(
+                    self._TPL_BASE.format(
+                        cfg=cfg,
+                        title=entry.title,
+                        keywords=keywords,
+                        content=content,
+                        js=js,
+                    )
+                )
+            files.append(ofile)
+        return files
+
+    def _write_index_pages(self, cfg: _Config) -> list[Path]:
+        print("\n:: write indexes")
+        files = [self._write_index_page(cfg)]
+        fulltaglist = set()
+        for post in self._entries:
+            fulltaglist |= set(post.tags)
+        for tag in fulltaglist:
+            files.append(self._write_index_page(cfg, tag))
+        return files
+
+    def _write_index_page(self, cfg: _Config, tag: str | None = None) -> Path:
+        title = cfg.title
+        if tag:
+            title += f"/{tag}"
+            entries = [e for e in self._entries if tag in e.tags]
+        else:
+            entries = self._entries
+
+        entries_html_list = []
+        for entry in entries:
+            tag_html = self._get_tag_html(entry.tags, tag)
+            index_entry = self._TPL_INDEX_ENTRY.format(tags=tag_html, e=entry)
+            entries_html_list.append(index_entry)
+
+        content = "\n".join(entries_html_list)
+        if tag:
+            content = self._INDEX_LINK + content
+
+        fname = cfg.www_dir / (f"x/index-{tag}.html" if tag else "index.html")
+        keywords = tag if tag else self._keywords
+
+        print(f"   writing {fname}")
+        with open(fname, "w") as f:
+            f.write(
+                self._TPL_BASE.format(
+                    cfg=cfg, keywords=keywords, title=title, content=content, js=""
+                )
+            )
+
+        return fname
+
+    def _get_tag_html(self, tags: list[str], current: str | None = None) -> str:
+        return ", ".join(
+            (
+                f"<span>{tag}</span>"
+                if tag == current
+                else f'<a href="/x/index-{tag}.html">{tag}</a>'
+            )
+            for tag in tags
+        )
+
+    def _write_rss(self, cfg: _Config):
+        print("\n:: RSS")
+        content = "\n".join(entry.rss(cfg) for entry in self._entries[:10])
+        with open(cfg.www_dir / "rss.xml", "w") as rss:
+            rss.write(self._TPL_RSS.format(cfg=cfg, content=content))
+
+    def _cleanup(self, cfg: _Config, index_pages: list[Path], post_pages: list[Path]):
+        print("\n:: cleanup unused index pages")
+        index_page = cfg.www_dir / "index.html"
+        dst_index_pages = set([index_page] + list(cfg.www_dir.glob("x/*.html")))
+        blank_index = cfg.www_dir / "x" / "index.html"
+        all_index_pages = set(index_pages + [blank_index])
+        for f in dst_index_pages - all_index_pages:
+            print("   rm %s" % f)
+            os.unlink(f)
+
+        print("\n:: cleanup unused post pages")
+        dst_post_pages = set(cfg.www_dir.glob("p/*.html"))
+        blank_post = cfg.www_dir / "p" / "index.html"
+        all_post_pages = set(post_pages + [blank_post])
+        for f in dst_post_pages - all_post_pages:
+            print("   rm %s" % f)
+            os.unlink(f)
+
+
+def _run_cmd(cmd: list[str | Path]):
+    print(cmd)
+    subprocess.run(cmd)
+
+
+def _serv(cfg: _Config):
+    import http.server
+    import socketserver
+
+    os.chdir(cfg.www_dir)
+    port = 8000
+    handler = http.server.SimpleHTTPRequestHandler
+    with socketserver.TCPServer(("", port), handler) as httpd:
+        print(f"Serving at http://0.0.0.0:{port}")
+        httpd.serve_forever()
+
+
+def _main():
+    cfg = _Config.get()
+    blog = _Blog(cfg)
+    if len(sys.argv) < 2:
+        print(f"{sys.argv[0]} <gen|new|serv|sync>")
+        return
+    match sys.argv[1]:
+        case "gen":
+            blog.update_staging(cfg)
+        case "new":
+            if len(sys.argv) != 3:
+                print("Usage: {sys.argv[0]} new <identifier>")
+            blog.new_post(sys.argv[2])
+        case "serv":
+            _serv(cfg)
+        case "sync":
+            _run_cmd(
+                ["rsync", "-av", "--delete", str(cfg.www_dir) + "/.", cfg.remote_dst]
+            )
+
+
+if __name__ == "__main__":
+    _main()

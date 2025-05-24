@@ -4,3 +4,4 @@ set -uex
 
 cd "$(dirname "$0")"
 stow --verbose bin --target ~/.local/bin
+stow --verbose share --target ~/.local/share
