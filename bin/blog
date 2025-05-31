@@ -127,6 +127,8 @@ class _Entry:
         content = content.replace('src="/', f'src="{url}')
         content = content.replace("href='/", f"href='{url}")
         content = content.replace('href="/', f'href="{url}')
+        content = content.replace("data-fragment='/", f"data-fragment='{url}")
+        content = content.replace('data-fragment="/', f'data-fragment="{url}')
         desc = escape(content)
         return (
             dedent(
@@ -185,6 +187,7 @@ class _Blog:
         </script>
         """
     )
+    _SHADER_JS = '  <script type="module" src="/shader.js"></script>'
     _TPL_BASE = dedent(
         """\
         <!doctype html>
@@ -319,7 +322,9 @@ class _Blog:
             keywords = ", ".join(entry.tags)
             with open(ofile, "w") as page:
                 content = entry_head + entry.html + entry_foot
-                js = self._MATH_JS if 'class="math' in content else ""
+                js = ""
+                js += self._MATH_JS if 'class="math' in content else ""
+                js += self._SHADER_JS if 'class="shader-canvas"' in content else ""
                 page.write(
                     self._TPL_BASE.format(
                         cfg=cfg,

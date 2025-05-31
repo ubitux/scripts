@@ -86,6 +86,8 @@ blockquote p {
 	background-color: var(--color-bg);
 }
 
+canvas { display: block; margin: 10px auto 10px auto; }
+
 div.admonition { padding-left: 1em; }
 div.admonition .admonition-title { font-weight: bold; }
 
