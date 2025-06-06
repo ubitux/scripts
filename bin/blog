@@ -201,7 +201,7 @@ class _Blog:
           <script defer src="/highlight.min.js" onload="hljs.highlightAll();"></script>
           <link rel="stylesheet" type="text/css" href="/style.css" />{js}
           <meta name="keywords" content="{keywords}" />
-          <meta name="viewport" content="width=device-width" />
+          <meta name="viewport" content="width=device-width, initial-scale=1.0" />
          </head>
          <body>
          <div id="content">
