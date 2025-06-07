@@ -64,7 +64,7 @@ img[alt=floatrightimg] { float: right; margin-left:  10px; }
 figure { text-align: center; margin-bottom: 2.5em; }
 figcaption { font-style: italic; }
 
-video { max-width: 100%; }
+video { display: block; margin: auto; max-width: 100%; }
 
 code { background-color: var(--color-lightgray); }
 pre { overflow: auto; border-radius: 5px; }
