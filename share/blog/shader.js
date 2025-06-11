@@ -49,6 +49,8 @@ async function initCanvas(canvas) {
   if (!gl.getProgramParameter(prog, gl.LINK_STATUS)) {
     throw new Error(gl.getProgramInfoLog(prog));
   }
+  gl.deleteShader(vs);
+  gl.deleteShader(fs);
 
   const resolutionLoc = gl.getUniformLocation(prog, "resolution");
   const timeLoc = gl.getUniformLocation(prog, "time");
