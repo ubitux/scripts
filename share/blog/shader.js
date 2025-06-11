@@ -1,8 +1,3 @@
-async function loadText(url) {
-  const res = await fetch(url);
-  return res.text();
-}
-
 function compileShader(gl, source, type) {
   const shader = gl.createShader(type);
   gl.shaderSource(shader, source);
@@ -27,6 +22,7 @@ async function initCanvas(canvas) {
         gl_Position = vec4(pos[gl_VertexID], 0.0, 1.0);
     }`;
 
+  const fsUser = await fetch(canvas.dataset.fragment).then(r => r.text());
   const fsSrc = `#version 300 es
     #if GL_FRAGMENT_PRECISION_HIGH
     precision highp float;
@@ -37,7 +33,7 @@ async function initCanvas(canvas) {
     #endif
     out vec4 out_color;
     uniform float time;
-    uniform vec2 resolution;` + await loadText(canvas.dataset.fragment);
+    uniform vec2 resolution;` + fsUser;
 
   const vs = compileShader(gl, vsSrc, gl.VERTEX_SHADER);
   const fs = compileShader(gl, fsSrc, gl.FRAGMENT_SHADER);
