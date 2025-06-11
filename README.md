@@ -142,10 +142,10 @@ appropriately.
 - [bezier-anim.py](oneshot/bezier-anim.py): script used to generate the
   deconstructed animated Bézier video in one of my [blog post][bezier]
 - [simd-aarch64.py](oneshot/simd-aarch64.py): generates an SVG cheatsheet for a
-  bunch of AArch64 SIMD instructions, can be [seen on Twitter][simd-aarch64]
+  bunch of AArch64 SIMD instructions, can be [seen on Mastodon][simd-aarch64]
 
 [bezier]: http://blog.pkh.me/p/33-deconstructing-be%CC%81zier-curves.html
-[simd-aarch64]: https://twitter.com/insouris/status/1580670107067432960
+[simd-aarch64]: https://fosstodon.org/@bug/109366202667278893
 
 
 ## Config
