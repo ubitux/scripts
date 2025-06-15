@@ -1,0 +1,24 @@
+#!/usr/bin/env python
+import sys
+
+
+def l2s(x):  # linear to sRGB
+    return x * 12.92 if x < 0.0031308 else 1.055 * x ** (1 / 2.4) - 0.055
+
+
+def clip(x):
+    return min(max(x, 0), 0xFF)
+
+
+if len(sys.argv) - 1 not in (3, 4):
+    print(f"Usage: {sys.argv[0]} [-l] r g b", file=sys.stderr)
+    sys.exit(1)
+
+linear = sys.argv[1] == "-l"
+c = [float(x) for x in sys.argv[1 + int(linear) :]]
+if linear:
+    c = [l2s(x) for x in c]
+c = [clip(round(x * 0xFF)) for x in c]
+r, g, b = c
+h = r << 16 | g << 8 | b
+print(f"#{h:06x}")

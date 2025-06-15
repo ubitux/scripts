@@ -69,6 +69,8 @@ on `stow`.
   mp3 (if needed, with FFmpeg), preserving the file tree.
 - [fixday](bin/fixday): if I run `newday` too late, I can fix it with this
   script.
+- [float2rgb](bin/float2rgb): convert `r,g,b` to `#RRGGBB` format where `r`,
+  `g` and `b` are floats
 - [gifenc](bin/gifenc): encode a video to a GIF file using FFmpeg and the
   palette mechanism, supports fps, scale and a few other flags
 - [hex](bin/hex): convert hex strings to their ASCII/binary representation
