@@ -62,7 +62,6 @@ img[alt=floatleftimg]  { float: left;  margin-right: 10px; }
 img[alt=floatrightimg] { float: right; margin-left:  10px; }
 
 figure { text-align: center; margin-bottom: 2.5em; }
-figcaption { font-style: italic; }
 
 video { display: block; margin: auto; max-width: 100%; }
 
