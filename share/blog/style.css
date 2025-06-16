@@ -56,10 +56,8 @@ h3 { font-size: 1.4em; margin-top: 40px; }
 h2::before { content: '# '; }
 h3::before { content: '## '; }
 
-img { margin: 10px 0px 10px 0px; box-shadow: 5px 5px 5px 0 var(--color-shadow); max-width: 100%; }
-img[alt=centerimg]     { margin-left: auto; margin-right: auto; display: block; }
-img[alt=floatleftimg]  { float: left;  margin-right: 10px; }
-img[alt=floatrightimg] { float: right; margin-left:  10px; }
+img { display: block; margin: 10px auto 10px auto; box-shadow: 5px 5px 5px 0 var(--color-shadow); max-width: 100%; }
+img.floatright { float: right; margin-left: 10px; }
 
 figure { text-align: center; margin-bottom: 2.5em; }
 
