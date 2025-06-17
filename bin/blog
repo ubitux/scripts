@@ -194,14 +194,14 @@ class _Blog:
         <html lang="en">
          <head>
           <title>{title}</title>
-          <link rel="icon" type="image/png" href="/favicon.png" />
-          <meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
-          <link href="/rss.xml" rel="alternate" type="application/rss+xml" title="{cfg.domain}" />
+          <link rel="icon" type="image/png" href="/favicon.png">
+          <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+          <link href="/rss.xml" rel="alternate" type="application/rss+xml" title="{cfg.domain}">
           <link rel="stylesheet" href="/github-dark.min.css">
           <script defer src="/highlight.min.js" onload="hljs.highlightAll();"></script>
-          <link rel="stylesheet" type="text/css" href="/style.css" />{js}
-          <meta name="keywords" content="{keywords}" />
-          <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+          <link rel="stylesheet" type="text/css" href="/style.css">{js}
+          <meta name="keywords" content="{keywords}">
+          <meta name="viewport" content="width=device-width, initial-scale=1.0">
          </head>
          <body>
          <div id="content">
