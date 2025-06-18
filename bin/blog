@@ -40,11 +40,8 @@ class _Config:
 
     @classmethod
     def get(cls) -> Self:
-        cfg_path = (
-            Path(os.environ.get("XDG_CONFIG_HOME", Path.home() / ".config"))
-            / "blog"
-            / "blog.toml"
-        )
+        config_path = Path(os.environ.get("XDG_CONFIG_HOME", Path.home() / ".config"))
+        cfg_path = config_path / "blog" / "blog.toml"
         if not cfg_path.exists():
             cfg_data = {}
         else:
@@ -150,21 +147,17 @@ class _Entry:
 
     @cached_property
     def html(self):
-        tags = ", ".join(
-            f'<a href="/x/index-{tag}.html">{tag}</a>' for tag in self.tags
-        )
-        return (
-            dedent(
-                f"""\
+        tags = ", ".join(f'<a href="/x/index-{t}.html">{t}</a>' for t in self.tags)
+        head = dedent(
+            f"""\
                 <h1>{self.title}</h1>
                 <div id="meta-article">
                  <div class="date">{self.date}</div>
                  <div class="tags">{tags}</div>
                 </div>
-                """
-            )
-            + f"<article>{self.content}</article>\n"
+            """
         )
+        return head + f"<article>{self.content}</article>\n"
 
 
 class _Blog:
@@ -372,7 +365,11 @@ class _Blog:
         with open(fname, "w") as f:
             f.write(
                 self._TPL_BASE.format(
-                    cfg=cfg, keywords=keywords, title=title, content=content, js=""
+                    cfg=cfg,
+                    keywords=keywords,
+                    title=title,
+                    content=content,
+                    js="",
                 )
             )
 
