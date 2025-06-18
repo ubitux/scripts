@@ -120,12 +120,9 @@ class _Entry:
         guid = link
         date = email.utils.formatdate(int(self.dtime.timestamp()))
         content = self.content
-        content = content.replace("src='/", f"src='{url}")
-        content = content.replace('src="/', f'src="{url}')
-        content = content.replace("href='/", f"href='{url}")
-        content = content.replace('href="/', f'href="{url}')
-        content = content.replace("data-fragment='/", f"data-fragment='{url}")
-        content = content.replace('data-fragment="/', f'data-fragment="{url}')
+        for tag in ("src", "href", "data-fragment"):
+            content = content.replace(f"{tag}='/", f"{tag}='{url}")
+            content = content.replace(f'{tag}="/', f'{tag}="{url}')
         desc = escape(content)
         return (
             dedent(
