@@ -42,12 +42,12 @@ async function initCanvas(canvas) {
   const prog = gl.createProgram();
   gl.attachShader(prog, vs);
   gl.attachShader(prog, fs);
+  gl.deleteShader(vs);
+  gl.deleteShader(fs);
   gl.linkProgram(prog);
   if (!gl.getProgramParameter(prog, gl.LINK_STATUS)) {
     throw new Error(gl.getProgramInfoLog(prog));
   }
-  gl.deleteShader(vs);
-  gl.deleteShader(fs);
 
   const resolutionLoc = gl.getUniformLocation(prog, "resolution");
   const timeLoc = gl.getUniformLocation(prog, "time");
