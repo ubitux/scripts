@@ -1,0 +1,38 @@
+#!/bin/sh
+
+. "$(dirname "$0")/config"
+
+set -eux
+
+rm -rf /tmp/notes
+git clone "$NOTES_DIR" /tmp/notes
+
+data=/tmp/s.data
+
+cat <<EOF > /tmp/stats.plot
+set title "personal notes page and word stats over time"
+set key autotitle columnhead
+set xlabel "day"
+set ylabel "page count"
+set y2label "word count"
+set ytics nomirror
+set y2tics
+set tics out
+set grid
+set autoscale y
+set autoscale y2
+plot "/tmp/s.data" using "day":"pages" axes x1y1 with l title "pages", "" using "day":"words" axes x1y2 with l title "words"
+EOF
+
+cd /tmp/notes
+echo "day pages words commit" > $data
+day=0
+for commit in $(git rev-list --reverse origin/main); do
+    git reset --hard "$commit" > /dev/null
+    pages=$(find . -name '*.md' | wc -l)
+    words=$(find . -name '*.md' -print0 | xargs -0 cat | wc -w)
+    echo "$day $pages $words $commit" >> $data
+    day=$((day+1))
+done
+
+gnuplot -p /tmp/stats.plot

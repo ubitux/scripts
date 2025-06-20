@@ -99,6 +99,9 @@ on `stow`.
     + depends on the [config](#Config)
 - [notes_stats](bin/notes_stats): a bunch of stats of my notes
     + depends on the [config](#Config)
+- [notes_stats_graph](bin/notes_stats_graph): similar to `notes_stats` but
+  works on the full git history and display a graph
+    + depends on the [config](#Config) and needs GnuPlot
 - [pytunes](bin/pytunes): connect to MPD, scp all files from the playlist
   locally, and eventually convert them to the specified audio format
 - [record](bin/record): capture a selection (window or free-form) or the full
