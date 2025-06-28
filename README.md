@@ -93,6 +93,9 @@ on `stow`.
   line tool (depends on `gvfs-mtp`)
 - [music_clean_dir](bin/music_clean_dir): music from the Internet is usually
   polluted with various form of garbage, this script gets rid of it
+- [music_st](bin/music_st): add audio stream from a YouTube URL (or similar)
+  to MPD
+    + depends on `mpc`, `yt-dlp`, and the [config](#Config)
 - [newday](bin/newday): first thing I execute when I wake up; it creates a
   new entry in my `vimwiki` notes and prepare the daily commit in the git,
   which I update through the day until its last review before bed time.

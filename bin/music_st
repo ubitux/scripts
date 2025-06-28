@@ -1,0 +1,8 @@
+#!/bin/sh
+
+. "$(dirname "$0")/config"
+
+set -eu
+
+url=$(yt-dlp -f bestaudio -g "$1")
+MPD_HOST="$MPD_HOST" mpc add "$url"

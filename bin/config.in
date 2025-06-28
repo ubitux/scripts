@@ -48,3 +48,6 @@ ACC_MAIL_ACCOUNT="me"  # main account to alias to
 
 # Notes
 NOTES_DIR="$HOME/notes"
+
+# MPD
+MPD_HOST="password@mpdhost"
