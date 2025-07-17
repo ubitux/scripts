@@ -28,7 +28,7 @@ div#content {
 	clear: both;
 	margin-top: 10px;
 	margin-bottom: 10px;
-	padding: 10px;
+	padding: 1em;
 	border-radius: 3px;
 }
 
@@ -82,6 +82,8 @@ blockquote p {
 	padding: 0.9em;
 	background-color: var(--color-bg);
 }
+
+ul { padding-left: 1em; }
 
 canvas { display: block; margin: 10px auto 10px auto; }
 
