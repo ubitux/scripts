@@ -32,6 +32,7 @@ class _Config:
     domain: str
     title: str
     rss_title: str
+    fedi: str
     src_content: Path
     www_dir: Path
     remote_dst: str
@@ -54,6 +55,7 @@ class _Config:
         domain = cfg.get("domain", "example.com")
         title = cfg.get("title", "my/blog")
         rss_title = cfg.get("rss_title", title)
+        fedi = cfg.get("fedi", "")
         src_content = Path(cfg.get("src_content", "~/blog/content")).expanduser()
         www_dir = Path(cfg.get("www_dir", "~/blog/www")).expanduser()
         remote_dst = cfg.get("remote_dst", "user@example.com:/srv/http/blog")
@@ -64,6 +66,7 @@ class _Config:
             domain,
             title,
             rss_title,
+            fedi,
             src_content,
             www_dir,
             remote_dst,
@@ -243,6 +246,8 @@ class _Blog:
             ("keywords", keywords),
             ("viewport", "width=device-width, initial-scale=1.0"),
         ]
+        if fedi:
+            data.append(("fediverse:creator", fedi))
         return "\n".join(f'  <meta name="{n}" content="{c}">' for n, c in data)
 
     def _find_content(self, content_dir: Path) -> list[_Entry]:
@@ -325,7 +330,7 @@ class _Blog:
                     self._TPL_BASE.format(
                         cfg=cfg,
                         title=entry.title,
-                        meta=self.get_meta(keywords),
+                        meta=self.get_meta(keywords, cfg.fedi),
                         content=content,
                         js=js,
                     )
@@ -369,7 +374,7 @@ class _Blog:
             f.write(
                 self._TPL_BASE.format(
                     cfg=cfg,
-                    meta=self.get_meta(keywords),
+                    meta=self.get_meta(keywords, cfg.fedi),
                     title=title,
                     content=content,
                     js="",
