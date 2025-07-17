@@ -266,11 +266,7 @@ class _Blog:
         return ret
 
     def new_post(self, base_name: str):
-        index = (
-            [e for e in self._entries if not e.draft][0].index + 1
-            if self._entries
-            else 1
-        )
+        index = [e for e in self._entries][0].index + 1 if self._entries else 1
         path = self._cfg.src_content / f"{index:03}-{base_name}.md"
         assert not path.exists()
         date = datetime.datetime.now().isoformat()
