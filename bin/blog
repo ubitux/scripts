@@ -190,8 +190,7 @@ class _Blog:
           <link rel="stylesheet" href="/github-dark.min.css">
           <script defer src="/highlight.min.js" onload="hljs.highlightAll();"></script>
           <link rel="stylesheet" type="text/css" href="/style.css">{js}
-          <meta name="keywords" content="{keywords}">
-          <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        {meta}
          </head>
          <body>
          <div id="content">
@@ -238,6 +237,13 @@ class _Blog:
         self._entries = self._find_content(cfg.src_content)
         c = Counter(sorted(tag for entry in self._entries for tag in entry.tags))
         self._keywords = ", ".join(tag for tag, _ in c.most_common())
+
+    def get_meta(self, keywords, fedi):
+        data = [
+            ("keywords", keywords),
+            ("viewport", "width=device-width, initial-scale=1.0"),
+        ]
+        return "\n".join(f'  <meta name="{n}" content="{c}">' for n, c in data)
 
     def _find_content(self, content_dir: Path) -> list[_Entry]:
         ret = []
@@ -319,7 +325,7 @@ class _Blog:
                     self._TPL_BASE.format(
                         cfg=cfg,
                         title=entry.title,
-                        keywords=keywords,
+                        meta=self.get_meta(keywords),
                         content=content,
                         js=js,
                     )
@@ -363,7 +369,7 @@ class _Blog:
             f.write(
                 self._TPL_BASE.format(
                     cfg=cfg,
-                    keywords=keywords,
+                    meta=self.get_meta(keywords),
                     title=title,
                     content=content,
                     js="",
