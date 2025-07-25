@@ -15,8 +15,6 @@ async function initCanvas(canvas) {
   if (!gl) {
     throw new Error("No WebGL2 context available");
   }
-  canvas.width = canvas.clientWidth;
-  canvas.height = canvas.clientHeight;
 
   const vsSrc = `#version 300 es
     const vec2 pos[] = vec2[](vec2(-1.0, -1.0), vec2(-1.0, 3.0), vec2(3.0, -1.0));
