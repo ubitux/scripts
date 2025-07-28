@@ -82,7 +82,7 @@ class _Entry:
     dtime: datetime.datetime
     title: str
     tags: list[str]
-    draft: bool
+    disabled: bool
     content: str
 
     _HEADER_MARKER = "+++\n"
@@ -98,10 +98,10 @@ class _Entry:
         index = int(ifile.name.split("-", maxsplit=1)[0])
         title = header_data["title"]
         tags = header_data.get("tags", [])
-        draft = header_data.get("draft", False)
+        disabled = header_data.get("disabled", False)
         dtime = header_data["date"]
         content = _MD.render(rawcontent.lstrip())
-        return cls(ifile, index, dtime, title, tags, draft, content)
+        return cls(ifile, index, dtime, title, tags, disabled, content)
 
     @cached_property
     def date(self) -> str:
@@ -260,7 +260,7 @@ class _Blog:
             if not f.name.endswith(".md"):
                 continue
             entry = _Entry.from_file(f)
-            if entry.draft:
+            if entry.disabled:
                 continue
             ret.append(entry)
         ret.sort(key=lambda e: e.dtime, reverse=True)
@@ -278,7 +278,7 @@ class _Blog:
             title = "The Title"
             date = {date}
             tags = []
-            draft = true
+            disabled = true
             +++
 
             """
