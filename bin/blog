@@ -188,7 +188,6 @@ class _Blog:
          <head>
           <title>{title}</title>
           <link rel="icon" type="image/png" href="/favicon.png">
-          <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
           <link href="/rss.xml" rel="alternate" type="application/rss+xml" title="{cfg.domain}">
           <link rel="stylesheet" href="/github-dark.min.css">
           <script defer src="/highlight.min.js" onload="hljs.highlightAll();"></script>
@@ -243,6 +242,7 @@ class _Blog:
 
     def get_meta(self, keywords, fedi):
         data = [
+            dict(charset="UTF-8"),
             dict(name="keywords", content=keywords),
             dict(name="viewport", content="width=device-width, initial-scale=1.0"),
         ]
