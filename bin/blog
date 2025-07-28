@@ -243,12 +243,13 @@ class _Blog:
 
     def get_meta(self, keywords, fedi):
         data = [
-            ("keywords", keywords),
-            ("viewport", "width=device-width, initial-scale=1.0"),
+            dict(name="keywords", content=keywords),
+            dict(name="viewport", content="width=device-width, initial-scale=1.0"),
         ]
         if fedi:
-            data.append(("fediverse:creator", fedi))
-        return "\n".join(f'  <meta name="{n}" content="{c}">' for n, c in data)
+            data.append(dict(property="fediverse:creator", content=fedi))
+        t = [" ".join(f'{k}="{v}"' for k, v in d.items()) for d in data]
+        return "\n".join(f"  <meta {meta}>" for meta in t)
 
     def _find_content(self, content_dir: Path) -> list[_Entry]:
         ret = []
