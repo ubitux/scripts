@@ -76,6 +76,13 @@ class _Config:
 
 
 @dataclass
+class _OGP:
+    title: str
+    url: Path
+    image: Path
+
+
+@dataclass
 class _Entry:
     ifile: Path
     index: int
@@ -84,6 +91,7 @@ class _Entry:
     tags: list[str]
     disabled: bool
     content: str
+    img: Path | None
 
     _HEADER_MARKER = "+++\n"
 
@@ -101,7 +109,11 @@ class _Entry:
         disabled = header_data.get("disabled", False)
         dtime = header_data["date"]
         content = _MD.render(rawcontent.lstrip())
-        return cls(ifile, index, dtime, title, tags, disabled, content)
+        img = header_data.get("img")
+        if img:
+            if not (ifile.parent / img).exists():
+                raise Exception(f"{img} not found")
+        return cls(ifile, index, dtime, title, tags, disabled, content, img)
 
     @cached_property
     def date(self) -> str:
@@ -240,7 +252,7 @@ class _Blog:
         c = Counter(sorted(tag for entry in self._entries for tag in entry.tags))
         self._keywords = ", ".join(tag for tag, _ in c.most_common())
 
-    def get_meta(self, keywords, fedi):
+    def get_meta(self, keywords, fedi, ogp=None):
         data = [
             dict(charset="UTF-8"),
             dict(name="keywords", content=keywords),
@@ -248,6 +260,14 @@ class _Blog:
         ]
         if fedi:
             data.append(dict(property="fediverse:creator", content=fedi))
+        if ogp:
+            base_url = f"https://{self._cfg.domain}"
+            data += [
+                dict(property="og:title", content=ogp.title),
+                dict(property="og:type", content="article"),
+                dict(property="og:url", content=f"{base_url}/{ogp.url}"),
+                dict(property="og:image", content=f"{base_url}/{ogp.image}"),
+            ]
         t = [" ".join(f'{k}="{v}"' for k, v in d.items()) for d in data]
         return "\n".join(f"  <meta {meta}>" for meta in t)
 
@@ -318,6 +338,7 @@ class _Blog:
             ofile = cfg.www_dir / entry.ofile_rel
             print("   writing %-35s -> %s" % (entry.ifile, ofile))
             keywords = ", ".join(entry.tags)
+            ogp = _OGP(entry.title, entry.ofile_rel, entry.img) if entry.img else None
             with open(ofile, "w") as page:
                 content = entry_head + entry.html + entry_foot
                 js = ""
@@ -327,7 +348,7 @@ class _Blog:
                     self._TPL_BASE.format(
                         cfg=cfg,
                         title=entry.title,
-                        meta=self.get_meta(keywords, cfg.fedi),
+                        meta=self.get_meta(keywords, cfg.fedi, ogp),
                         content=content,
                         js=js,
                     )
