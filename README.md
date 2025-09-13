@@ -145,8 +145,6 @@ appropriately.
 
 - [axgen.py](oneshot/axgen.py): this is more a template than anything, it helps
   making an automatic grid of diagrams with matplotlib
-- [best-pi.py](oneshot/best-pi.py): brute-force script to find the most
-  retarded π approximation (spoiler: 22/7)
 - [bezier-anim.py](oneshot/bezier-anim.py): script used to generate the
   deconstructed animated Bézier video in one of my [blog post][bezier]
 - [simd-aarch64.py](oneshot/simd-aarch64.py): generates an SVG cheatsheet for a
