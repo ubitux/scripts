@@ -34,6 +34,11 @@ async function initCanvas(canvas) {
     out vec4 out_color;
     uniform float time;
     uniform vec2 resolution;
+
+    #define P gl_FragCoord.xy
+    #define O out_color
+    #define T time
+    #define R resolution
   ` + fsUser;
 
   const vs = compileShader(gl, vsSrc, gl.VERTEX_SHADER);
