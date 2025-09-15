@@ -10,7 +10,9 @@ function compileShader(gl, source, type) {
   return shader;
 }
 
-async function initCanvas(canvas) {
+async function initCanvas(canvas, ob) {
+  let aId = null;
+
   const gl = canvas.getContext("webgl2");
   if (!gl) {
     throw new Error("No WebGL2 context available");
@@ -64,9 +66,29 @@ async function initCanvas(canvas) {
     gl.uniform2f(resolutionLoc, canvas.width, canvas.height);
     gl.uniform1f(timeLoc, time * 0.001);
     gl.drawArrays(gl.TRIANGLES, 0, 3);
-    requestAnimationFrame(render);
+    aId = requestAnimationFrame(render);
   }
-  requestAnimationFrame(render);
+
+  canvas._start = function start() {
+    aId = requestAnimationFrame(render);
+  }
+
+  canvas._stop = function stop() {
+    if (aId === null) return;
+    cancelAnimationFrame(aId);
+    aId = null;
+  }
+
+  ob.observe(canvas);
 }
 
-document.querySelectorAll(".shader-canvas").forEach(initCanvas);
+const observer = new IntersectionObserver(entries => {
+  entries.forEach(entry => {
+    if (entry.isIntersecting)
+      entry.target._start();
+    else
+      entry.target._stop();
+  });
+});
+
+document.querySelectorAll(".shader-canvas").forEach(c => initCanvas(c, observer));
