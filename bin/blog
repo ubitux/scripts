@@ -345,8 +345,8 @@ class _Blog:
             with open(ofile, "w") as page:
                 content = entry_head + entry.html + entry_foot
                 js = ""
-                js += self._MATH_JS if 'class="math' in content else ""
                 js += self._SHADER_JS if 'class="shader-canvas"' in content else ""
+                js += self._MATH_JS if 'class="math' in content else ""
                 js = indent(js, "  ")
                 page.write(
                     self._TPL_BASE.format(
