@@ -192,7 +192,11 @@ class _Blog:
         </script>
         """
     )
-    _SHADER_JS = '  <script type="module" src="/shader.js"></script>'
+    _SHADER_JS = dedent(
+        """
+        <script src="https://cdn.jsdelivr.net/npm/virtual-webgl@1.0.7"></script>
+        <script type="module" src="/shader.js"></script>"""
+    )
     _TPL_BASE = dedent(
         """\
         <!doctype html>
