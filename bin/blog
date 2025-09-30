@@ -13,7 +13,7 @@ from dataclasses import dataclass
 from functools import cached_property
 from html import escape
 from pathlib import Path
-from textwrap import dedent
+from textwrap import dedent, indent
 from typing import Self
 
 from markdown_it import MarkdownIt
@@ -189,8 +189,7 @@ class _Blog:
             element.innerHTML = katex.renderToString(element.innerText, {displayMode: display_mode});
           }
         });
-        </script>
-        """
+        </script>"""
     )
     _SHADER_JS = dedent(
         """
@@ -348,6 +347,7 @@ class _Blog:
                 js = ""
                 js += self._MATH_JS if 'class="math' in content else ""
                 js += self._SHADER_JS if 'class="shader-canvas"' in content else ""
+                js = indent(js, "  ")
                 page.write(
                     self._TPL_BASE.format(
                         cfg=cfg,
