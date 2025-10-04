@@ -71,6 +71,8 @@ on `stow`.
   script.
 - [float2rgb](bin/float2rgb): convert `r,g,b` to `#RRGGBB` format where `r`,
   `g` and `b` are floats
+- [geolog](bin/geolog): display HTTPd logs with a flag from the country IP
+    + requires `geoip-database` and `python-geoip` (Arch package naming)
 - [gifenc](bin/gifenc): encode a video to a GIF file using FFmpeg and the
   palette mechanism, supports fps, scale and a few other flags
 - [hex](bin/hex): convert hex strings to their ASCII/binary representation

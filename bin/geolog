@@ -1,0 +1,23 @@
+#!/usr/bin/env python
+
+import fileinput
+
+import GeoIP
+
+g = GeoIP.open("/usr/share/GeoIP/GeoIP.dat", GeoIP.GEOIP_STANDARD)
+d = {}
+for line in fileinput.input():
+    s = line.split(maxsplit=1)
+    if not s:
+        continue
+    ip = s[0]
+    loc = d.get(ip)
+    if loc is not None:
+        print(loc, line, end="", flush=True)
+        continue
+    code = g.country_code_by_addr(ip)
+    if code is None:
+        d[ip] = "??"
+        continue
+    loc = "".join(chr(ord(c) + 0x1F1A5) for c in code)
+    d[ip] = loc
