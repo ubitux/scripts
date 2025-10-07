@@ -13,7 +13,7 @@ for line in fileinput.input():
     ip = s[0]
     loc = d.get(ip)
     if loc is not None:
-        print(loc, line, end="", flush=True)
+        print(loc, line.rstrip(), flush=True)
         continue
     code = g.country_code_by_addr(ip)
     if code is None:
