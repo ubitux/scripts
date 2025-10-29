@@ -4,5 +4,6 @@
 
 set -eu
 
-url=$(yt-dlp -f bestaudio -g "$1")
+url=$(yt-dlp -f bestaudio -g "$1" || true)
+[ -z "$url" ] && url=$(yt-dlp -g "$1")
 MPD_HOST="$MPD_HOST" mpc add "$url"
