@@ -64,7 +64,15 @@ figure { text-align: center; margin-bottom: 2.5em; }
 video { display: block; margin: auto; max-width: 100%; }
 
 code { background-color: var(--color-lightgray); }
-pre { overflow: auto; border-radius: 5px; }
+pre {
+	overflow: auto;
+	border-radius: 5px;
+	overflow-wrap: anywhere;
+	word-break: break-all;
+	contain: inline-size;
+	white-space: pre-wrap;
+}
+
 pre, pre code { background-color: var(--color-bg0); }
 
 table { border-collapse: collapse; margin: auto; }
