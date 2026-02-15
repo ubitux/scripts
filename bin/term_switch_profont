@@ -1,6 +1,0 @@
-#!/bin/sh
-
-set -eu
-
-. "$(dirname "$0")/helpers/term"
-term_switch ProfontOTB Regular 8
