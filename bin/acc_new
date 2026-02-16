@@ -24,4 +24,5 @@ echo "    acc_add_mail_alias $id $genid"
 echo
 echo "Register account:"
 echo "    acc_register $id $genid $passwd"
+echo "    history delete -c acc_register # fish only"
 echo
