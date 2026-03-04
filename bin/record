@@ -5,10 +5,10 @@ set -eu
 fullscreen=0
 transcode=1
 audio=0
-while getopts 'fan' o; do
+while getopts 'fa:n' o; do
     case $o in
         f) fullscreen=1 ;;
-        a) audio=1 ;;
+        a) audio=$OPTARG ;;  # use pactl list short sources
         n) transcode=0 ;;
         *) exit 1 ;;
     esac
@@ -30,9 +30,8 @@ else
     cmd="$base_cmd \$(slop -f '-s %wx%h -i :0.0+%x,%y')"
 fi
 
-if [ $audio -eq 1 ]; then
-    # use pactl list short sources
-    cmd="$cmd -f pulse -ac 2 -i alsa_output.pci-0000_00_1f.3.analog-stereo.monitor"
+if [ "$audio" != 0 ]; then
+    cmd="$cmd -f pulse -ac 2 -i $audio"
 fi
 
 cmd="$cmd -preset ultrafast -qp 0"  # x264 lossless
