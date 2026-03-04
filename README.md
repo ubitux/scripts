@@ -117,11 +117,11 @@ on `stow`.
   `htmlq`
 - [shot](bin/shot): takes a screenshot using `shot` and uploads it
     + depends on the [config](#Config)
-- [shotl](bin/shotl): takes a screenshot using `shotgun`. Supports delaying
-  the screenshot `-d DELAY`, editing after the screenshot is taken (`-e`),
-  picking a specific zone (`-s`) and an output file argument
-    + depends on the [config](#Config), `shotgun`, `slop` (for selection) and
-      `pwgen`
+- [shotl](bin/shotl): takes a screenshot using `shotgun` (X11) or `grim` (sway).
+  Supports delaying the screenshot `-d DELAY`, editing after the screenshot is
+  taken (`-e`), picking a specific zone (`-s`) and an output file argument
+    + depends on the [config](#Config), `shotgun`+`slop` (X11) or `grim`+`slurp`
+      (sway), and `pwgen`
 - [smux](bin/smux): connect to an host, start tmux if the target session is
   not up, and attach to it. I do have aliases such as `alias music='smux
   myserver music'` and `alias rss='smux myserver rss'` (same user/server,

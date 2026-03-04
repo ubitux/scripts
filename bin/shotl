@@ -3,12 +3,18 @@
 set -eu
 
 . "$(dirname "$0")/config"
+. "$(dirname "$0")/helpers/wayland"
 
 while getopts 'd:es' o; do
     case $o in
         d) delay=$OPTARG ;;
         e) editor=$SHOT_EDITOR ;;
-        s) sel=$(slop -f "-i %i -g %g")
+        s) if [ "$XDG_SESSION_TYPE" = "wayland" ]; then
+               # Assumes sway.
+               sel="-g $(swayselect)"
+           else
+               sel=$(slop -f "-i %i -g %g")
+           fi
            test -z $sel && exit 1
            ;;
     esac
@@ -16,5 +22,9 @@ done
 shift $((OPTIND-1))
 f=${1:-$(date +%F-%H%M%S)-$(pwgen).png}
 test -z ${delay:-} || sleep $delay
-shotgun ${=sel:-} $f && echo $f
+if [ "$XDG_SESSION_TYPE" = "wayland" ]; then
+    grim ${sel:-} $f && echo $f
+else
+    shotgun ${=sel:-} $f && echo $f
+fi
 test -z ${editor:-} || $editor $f
