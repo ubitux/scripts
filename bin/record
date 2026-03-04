@@ -40,19 +40,19 @@ if [ "$XDG_SESSION_TYPE" = "wayland" ]; then
     # see https://github.com/ammen99/wf-recorder/issues/130#issuecomment-3999876713
     cmd="$cmd -c libx264 -p preset=ultrafast -p crf=-1 -p qp=0 -x yuv444p -f"
 else
-cmd="ffmpeg -f x11grab -show_region 1 -draw_mouse 1 -r 60"
+    cmd="ffmpeg -f x11grab -show_region 1 -draw_mouse 1 -r 60"
 
-if [ $fullscreen -eq 1 ]; then
-    cmd="$cmd -s \$(xrandr | grep '*' | awk '{ print \$1 }') -i :0.0"
-else
-    cmd="$cmd \$(slop -f '-s %wx%h -i :0.0+%x,%y')"
-fi
+    if [ $fullscreen -eq 1 ]; then
+        cmd="$cmd -s \$(xrandr | grep '*' | awk '{ print \$1 }') -i :0.0"
+    else
+        cmd="$cmd \$(slop -f '-s %wx%h -i :0.0+%x,%y')"
+    fi
 
-if [ "$audio" != 0 ]; then
-    cmd="$cmd -f pulse -ac 2 -i $audio"
-fi
+    if [ "$audio" != 0 ]; then
+        cmd="$cmd -f pulse -ac 2 -i $audio"
+    fi
 
-cmd="$cmd -c:v libx264 -preset ultrafast -qp 0 -pix_fmt yuv444p"  # x264 lossless
+    cmd="$cmd -c:v libx264 -preset ultrafast -qp 0 -pix_fmt yuv444p"  # x264 lossless
 fi
 
 if [ $transcode -eq 0 ]; then
