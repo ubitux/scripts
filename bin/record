@@ -10,6 +10,7 @@ while getopts 'fan' o; do
         f) fullscreen=1 ;;
         a) audio=1 ;;
         n) transcode=0 ;;
+        *) exit 1 ;;
     esac
 done
 shift $((OPTIND-1))
