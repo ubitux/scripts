@@ -1,0 +1,11 @@
+#!/bin/sh
+
+swayselect() {
+    # Recommended way to get a window screenshot. slurp alone would work just
+    # with a selection, but not for selecting a window.
+    # Source: https://github.com/emersion/slurp
+    cmd=$(swaymsg -t get_tree | jq -r '.. | select(.pid? and .visible?) | "\(.rect.x+.window_rect.x),\(.rect.y+.window_rect.y) \(.window_rect.width)x\(.window_rect.height)"' | slurp)
+    # Version with borders:
+    # cmd=$(swaymsg -t get_tree | jq -r '.. | select(.pid? and .visible?) | .rect | "\(.x),\(.y) \(.width)x\(.height)"' | slurp)
+    echo "$cmd"
+}
