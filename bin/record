@@ -35,7 +35,7 @@ if [ "$audio" != 0 ]; then
     cmd="$cmd -f pulse -ac 2 -i $audio"
 fi
 
-cmd="$cmd -preset ultrafast -qp 0"  # x264 lossless
+cmd="$cmd -c:v libx264 -preset ultrafast -qp 0 -pix_fmt yuv444p"  # x264 lossless
 
 if [ $transcode -eq 0 ]; then
     eval "$cmd" "$ofile"
