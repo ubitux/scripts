@@ -1,0 +1,8 @@
+#!/bin/sh
+
+set -ue
+
+. "$(dirname "$0")/config"
+
+target_list=$(sed -e 's/#.*//' "$PKG_LIST_FILE" | xargs)
+sudo pacman -Syu --needed $target_list

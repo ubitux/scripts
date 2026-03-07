@@ -1,0 +1,27 @@
+#!/bin/sh
+
+set -ue
+
+. "$(dirname "$0")/config"
+
+if [ ! -f "$PKG_LIST_FILE" ]; then
+  echo "No packages list found"
+  exit 1
+fi
+
+tmp_want=$(mktemp)
+tmp_haz=$(mktemp)
+trap 'rm -f "$tmp_want" "$tmp_haz"' EXIT
+
+target_list=$(sed -e 's/#.*//' "$PKG_LIST_FILE")
+
+target_list_unpacked=""
+for pkg in $target_list; do
+  unpacked=$(pacman -Qgq "$pkg" 2>/dev/null || echo "$pkg")
+  target_list_unpacked="$target_list_unpacked $unpacked"
+done
+
+echo "$target_list_unpacked" | xargs | tr ' ' '\n' | sort > "$tmp_want"
+pacman -Qeq | sort > "$tmp_haz"
+
+diff -u --color=always "$tmp_want" "$tmp_haz" | less -r
