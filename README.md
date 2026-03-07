@@ -60,7 +60,7 @@ on `stow`.
     + depends on the [config](#Config)
     + used exclusively as a pipe (`ls -l | bpaste` or `bpaste my-great-file <
       my.file`: the optional argument is only here to tweak the URL a bit
-- [blog](utils/blog): blog to create new articles, generate the HTML and sync;
+- [blog](bin/blog): blog to create new articles, generate the HTML and sync;
   kinda generic, use at your own risk
 - [c](bin/c): calendar integration with `remind` and my notes (`rem` specs is
   extracted from a markdown quote); it watches for changes on the file and
