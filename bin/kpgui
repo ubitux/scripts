@@ -1,0 +1,5 @@
+#!/bin/sh
+
+set -eu
+
+kp -c $(kpl | rofi -dmenu -p "Copy password")

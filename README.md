@@ -89,6 +89,9 @@ on `stow`.
       directory
 - [kpf](bin/kpf): on top of `kp` but with `fzf` for fuzzy finding an account
     + depends on the [config](#Config)
+- [kpgui](bin/kpgui): trigger `kp` but with a fancy GUI
+    + depends on the [config](#Config), `rofi`, and `kpl`
+- [kpl](bin/kpl): flat list of password, based on `kp`, used by `kpgui`
 - [mtp_mount](bin/mtp_mount): auto mount all MTP devices using GIO command
   line tool (depends on `gvfs-mtp`)
 - [mtp_umount](bin/mtp_umount): auto umount all MTP devices using GIO command
