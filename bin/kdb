@@ -1,5 +1,4 @@
 #!/bin/sh
 
-setxkbmap eu
-xmodmap "$HOME/.Xmodmap"
+setxkbmap eu "" "" compose:rctrl
 xset r rate 180 70
