@@ -116,6 +116,7 @@ on `stow`.
 - [pkg-list-diff](bin/pkg-list-diff): help keeping a consistent list of
   packages on Archlinux.
     + depends on the [config](#Config)
+- [detpkg](bin/detpkg): manage Archlinux packages deterministically.
 - [pytunes](bin/pytunes): connect to MPD, scp all files from the playlist
   locally, and eventually convert them to the specified audio format
 - [record](bin/record): capture a selection (window or free-form) or the full

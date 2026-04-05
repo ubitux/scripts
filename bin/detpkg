@@ -1,0 +1,218 @@
+#!/usr/bin/env python3
+
+import argparse
+import os
+import re
+import shlex
+import subprocess
+import textwrap
+from argparse import Namespace
+from pathlib import Path
+
+
+def run_cmd(args: Namespace, cmd: list[str], capture_output: bool = True) -> str:
+    if args.host:
+        cmd = ["ssh", args.host] + cmd
+    r = subprocess.run(cmd, capture_output=capture_output, text=True)
+    # Ignore error on purpose (when there is no result, pacman errors out)
+    return "" if r.returncode else r.stdout
+
+
+def run_interactive_cmd_as_root(args: Namespace, cmd: list[str]):
+    if args.become_cmd:
+        cmd = shlex.split(args.become_cmd) + cmd
+    run_cmd(args, cmd, capture_output=False)
+
+
+def get_pacman_pkgs_list(args: Namespace, query: str) -> set[str]:
+    return set(run_cmd(args, ["pacman", "-Qq" + query]).split())
+
+
+def get_group2pkg(args: Namespace) -> dict[str, set[str]]:
+    """Return group to packages map (local only)"""
+    groups = {}
+    for line in run_cmd(args, ["pacman", "-Qg"]).splitlines():
+        group, pkg = line.split(maxsplit=1)
+        groups.setdefault(group, set()).add(pkg)
+    return groups
+
+
+def get_target_unpacked_pkgs(args: Namespace) -> set[str]:
+    """The target list with the group packages replaced with the underlying packages"""
+    with open(args.pkg_list_file, "r") as f:
+        content = f.read()
+        content = re.sub(r"#.*", "", content)  # drop comments
+        target_pkgs = set(content.split())
+    groups = get_group2pkg(args)
+    unpacked = set()
+    for pkg in target_pkgs:
+        unpacked.update(groups.get(pkg, {pkg}))
+    return unpacked
+
+
+def get_pkg2group(args: Namespace) -> dict[str, set[str]]:
+    """Return package to group map (not limited to local)"""
+    groups = {}
+    for line in run_cmd(args, ["pacman", "-Sgg"]).splitlines():
+        group, pkg = line.split(maxsplit=1)
+        groups.setdefault(pkg, set()).add(group)
+    return groups
+
+
+class Style:
+    BOLD = "\033[1m"
+    UNDERLINE = "\033[4m"
+    YELLOW = "\033[33m"
+    CYAN = "\033[36m"
+    RESET = "\033[0m"
+
+
+def report_list(groups: dict[str, set[str]], pkgs: set[str], title: str, fix: str):
+    if not pkgs:
+        return
+
+    # Display which group the package may belong to
+    pkgs_grp = set()
+    for pkg in sorted(pkgs):
+        group = " ".join(sorted(groups.get(pkg, set())))
+        pkgs_grp.add(f"{pkg} ({Style.BOLD}{group}{Style.RESET})" if group else pkg)
+
+    lst = "\n".join(f"  {e}" for e in sorted(pkgs_grp))
+    fix = textwrap.indent(textwrap.fill(f"Fix: {fix}", width=80), "  ")
+
+    print(f"{Style.BOLD + Style.UNDERLINE + Style.YELLOW}{title}{Style.RESET}\n")
+    print(f"{lst}\n")
+    print(f"{Style.CYAN}{fix}{Style.RESET}\n\n")
+
+
+def cmd_checks(args: Namespace):
+    basename = Path(__file__).name
+
+    local_pkgs = get_pacman_pkgs_list(args, "")
+    local_explicit_pkgs = get_pacman_pkgs_list(args, "e")
+    foreign_pkgs = get_pacman_pkgs_list(args, "m")
+    local_unneeded_pkgs = get_pacman_pkgs_list(args, "td")
+    local_opt_unneeded_pkgs = get_pacman_pkgs_list(args, "ttd") - local_unneeded_pkgs
+    target_unpacked_pkgs = get_target_unpacked_pkgs(args)
+
+    extra_pkgs = local_explicit_pkgs - target_unpacked_pkgs
+    missing_pkgs = target_unpacked_pkgs - local_pkgs
+    dangling_deps_pkgs = target_unpacked_pkgs - local_explicit_pkgs - missing_pkgs
+
+    groups = get_pkg2group(args)
+
+    report_list(
+        groups,
+        foreign_pkgs,
+        "Packages no longer found in sync databases",
+        textwrap.dedent("""\
+            find equivalent packages, or uninstall them."""),
+    )
+    # FIXME: packages installed explicitly, but also present as dep, should not
+    # show up here (and should be marked asdeps)
+    report_list(
+        groups,
+        extra_pkgs,
+        "Explicitly installed packages that are not requested",
+        textwrap.dedent(f"""\
+            add these packages to your package list, or uninstall them.
+            Note that some of these can be depended upon, in which case it
+            might be relevant to mark them as dependency if you don't want
+            to explicit them in your list: {Style.BOLD}pacman -D --asdeps
+            <package(s)>{Style.RESET}{Style.CYAN}."""),
+    )
+    report_list(
+        groups,
+        missing_pkgs,
+        "Missing packages that are requested",
+        textwrap.dedent(f"""\
+            use {Style.BOLD}{basename} install{Style.RESET}{Style.CYAN} or
+            remove them from your package list."""),
+    )
+    report_list(
+        groups,
+        dangling_deps_pkgs,
+        "Packages marked installed as dependency that are explicitly requested",
+        textwrap.dedent(f"""\
+            mark them with {Style.BOLD}pacman -D --asexplicit
+            <package(s)>{Style.RESET}{Style.CYAN} (or use {Style.BOLD}{basename}
+            fix{Style.RESET}{Style.CYAN}), or remove them from your list."""),
+    )
+    report_list(
+        groups,
+        local_unneeded_pkgs,
+        "Packages marked installed as dependency but nothing depends on them",
+        textwrap.dedent(f"""
+            mark them with {Style.BOLD}pacman -D --asexplicit
+            <package(s)>{Style.RESET}{Style.CYAN} (and add them to your package
+            list), or uninstall them."""),
+    )
+    report_list(
+        groups,
+        local_opt_unneeded_pkgs,
+        "Packages marked installed as dependency but nothing hard depends on them (only optionally)",
+        textwrap.dedent(f"""
+            mark them with {Style.BOLD}pacman -D --asexplicit
+            <package(s)>{Style.RESET}{Style.CYAN} (and add them to your package
+            list), or uninstall them."""),
+    )
+
+
+def cmd_install(args: Namespace):
+    local_pkgs = get_pacman_pkgs_list(args, "")
+    target_unpacked_pkgs = get_target_unpacked_pkgs(args)
+    missing_pkgs = target_unpacked_pkgs - local_pkgs
+    if missing_pkgs:
+        cmd = ["pacman", "-Sy", "--needed"] + sorted(missing_pkgs)
+        run_interactive_cmd_as_root(args, cmd)
+
+
+def cmd_fix(args: Namespace):
+    local_pkgs = get_pacman_pkgs_list(args, "")
+    local_explicit_pkgs = get_pacman_pkgs_list(args, "e")
+    target_unpacked_pkgs = get_target_unpacked_pkgs(args)
+
+    missing_pkgs = target_unpacked_pkgs - local_pkgs
+    dangling_deps_pkgs = target_unpacked_pkgs - local_explicit_pkgs - missing_pkgs
+    if dangling_deps_pkgs:
+        cmd = ["pacman", "-D", "--asexplicit"] + sorted(dangling_deps_pkgs)
+        run_interactive_cmd_as_root(args, cmd)
+
+
+if __name__ == "__main__":
+    config_path = Path(os.environ.get("XDG_CONFIG_HOME", Path.home() / ".config"))
+    pkg_list_path = config_path / "my-packages"
+
+    parser = argparse.ArgumentParser(
+        description="Manage Archlinux packages deterministically."
+    )
+    parser.add_argument(
+        "-f",
+        "--pkg-list-file",
+        type=Path,
+        default=pkg_list_path,
+        help="Path to the file containing the list of packages (or groups). Default: %(default)s.",
+    )
+    parser.add_argument(
+        "--host",
+        default="",
+        help="Remote host to connect to with SSH to execute commands.",
+    )
+    parser.add_argument(
+        "--become-cmd",
+        default="sudo",
+        help="Permission escalation command (for installing packages). Default: %(default)s.",
+    )
+    parser.add_argument(
+        "command",
+        choices=["check", "install", "fix"],
+        help="Command",
+    )
+    args = parser.parse_args()
+
+    if args.command == "check":
+        cmd_checks(args)
+    elif args.command == "install":
+        cmd_install(args)
+    elif args.command == "fix":
+        cmd_fix(args)
