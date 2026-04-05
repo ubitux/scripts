@@ -110,12 +110,6 @@ on `stow`.
 - [notes_stats_graph](bin/notes_stats_graph): similar to `notes_stats` but
   works on the full git history and display a graph
     + depends on the [config](#Config) and needs GnuPlot
-- [pkg-install](bin/pkg-install): install all the user packages as needed on
-  Archlinux.
-    + depends on the [config](#Config)
-- [pkg-list-diff](bin/pkg-list-diff): help keeping a consistent list of
-  packages on Archlinux.
-    + depends on the [config](#Config)
 - [detpkg](bin/detpkg): manage Archlinux packages deterministically.
 - [pytunes](bin/pytunes): connect to MPD, scp all files from the playlist
   locally, and eventually convert them to the specified audio format

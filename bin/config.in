@@ -51,6 +51,3 @@ NOTES_DIR="$HOME/notes"
 
 # MPD
 MPD_HOST="password@mpdhost"
-
-# Packages
-PKG_LIST_FILE="$HOME/.local/share/my-packages"
