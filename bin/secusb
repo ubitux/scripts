@@ -1,0 +1,37 @@
+#!/bin/sh
+
+set -eu
+
+. "$(dirname "$0")/config"
+
+get_partition() {
+  dev=$(basename "$(readlink -f "$SECUSB_DEVICE")")
+  echo "/dev/$(ls "/sys/class/block/$dev/holders" | head -n1)"
+}
+
+if [ $# -ne 1 ]; then
+  echo "Usage: $0 <mount|pull|push|umount>"
+  exit 0
+fi
+
+cmd="$1"
+if [ "$cmd" = "mount" ]; then
+    udisksctl unlock -b "$SECUSB_DEVICE"
+    udisksctl mount -b  "$(get_partition)"
+elif [ "$cmd" = "umount" ]; then
+    udisksctl unmount -b "$(get_partition)"
+    udisksctl lock -b "$SECUSB_DEVICE"
+elif [ "$cmd" = "pull" ]; then
+  for r in $SECUSB_REPOS; do
+    echo ":: $r"
+    [ ! -d "$r" ] && echo "Skip" && continue
+    git -C "$r" pull --rebase
+  done
+elif [ "$cmd" = "push" ]; then
+  for r in $SECUSB_REPOS; do
+    echo ":: $r"
+    [ ! -d "$r" ] && echo "Skip" && continue
+    git -C "$r" diff-index --quiet HEAD || echo "DIRTY"
+    git -C "$r" push
+  done
+fi

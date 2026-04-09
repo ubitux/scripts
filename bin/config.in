@@ -51,3 +51,7 @@ NOTES_DIR="$HOME/notes"
 
 # MPD
 MPD_HOST="password@mpdhost"
+
+# Secure USB key
+SECUSB_DEVICE="/dev/disk/by-uuid/xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx"
+SECUSB_REPOS="$HOME/src/secret $HOME/.super-secret"

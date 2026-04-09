@@ -126,6 +126,8 @@ on `stow`.
   taken (`-e`), picking a specific zone (`-s`) and an output file argument
     + depends on the [config](#Config), `shotgun`+`slop` (X11) or `grim`+`slurp`
       (sway), and `pwgen`
+- [secusb](bin/secusb): encrypted USB key tooling
+    + depends on the [config](#Config) and `udisksctl`
 - [smux](bin/smux): connect to an host, start tmux if the target session is
   not up, and attach to it. I do have aliases such as `alias music='smux
   myserver music'` and `alias rss='smux myserver rss'` (same user/server,
