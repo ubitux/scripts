@@ -34,4 +34,7 @@ elif [ "$cmd" = "push" ]; then
     git -C "$r" diff-index --quiet HEAD || echo "DIRTY"
     git -C "$r" push
   done
+else
+  echo "Unknown command $cmd"
+  exit 1
 fi
