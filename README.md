@@ -133,6 +133,7 @@ on `stow`.
   myserver music'` and `alias rss='smux myserver rss'` (same user/server,
   different sessions)
 - [temp](bin/temp): convert temperatures (args or stdin) between °C and °F
+- [term-color](bin/term-color): test the terminal colors
 - [urlencode](bin/urlencode): URL encode a string, used by some of the other
   scripts, and sometimes I also use it manually
 - [weight_stats](bin/weight_stats): extract the weight stats from my notes

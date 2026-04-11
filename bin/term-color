@@ -1,0 +1,29 @@
+#!/usr/bin/env python
+
+colors = [
+    "default",
+    "black",
+    "red",
+    "green",
+    "yellow",
+    "blue",
+    "magenta",
+    "cyan",
+    "white",
+]
+rst_esc = "\033[m"
+
+
+def esc(x, base):
+    return f"\033[{base + x - 1}m" if x else ""
+
+
+for bright in (False, True):
+    for fg in range(9):
+        for bg in range(9):
+            fg_esc = esc(fg, 90 if bright else 30)
+            bg_esc = esc(bg, 100 if bright else 40)
+            prefix = "B" if bright else "N"
+            txt = f"{prefix}-{colors[fg]}".title()
+            print(f"{bg_esc}{fg_esc} {txt:10s}{rst_esc}", end="")
+        print()
