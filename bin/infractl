@@ -1,0 +1,430 @@
+#!/usr/bin/env python3
+
+import argparse
+import subprocess
+import threading
+import traceback
+from dataclasses import dataclass
+from functools import cache
+from pathlib import Path
+from typing import Callable
+
+import toml
+from wcwidth import wcswidth
+
+
+@dataclass
+class File:
+    path: Path
+    perms: int | None = None
+    usr: str | None = None
+    grp: str | None = None
+    chk: tuple[int, int] | None = None
+
+    @property
+    def sig(self):
+        return (self.perms, self.usr, self.grp, self.chk)
+
+
+@dataclass
+class Dir:
+    path: Path
+    perms: int | None = None
+    usr: str | None = None
+    grp: str | None = None
+
+    @property
+    def sig(self):
+        return (self.perms, self.usr, self.grp)
+
+
+def wpad(s: str, n: int) -> str:
+    return s + (n - wcswidth(s)) * " "
+
+
+class Table:
+
+    def __init__(self, *cols: str):
+        self.rows = [list(cols)]
+
+    def add_row(self) -> list[str]:
+        row = [""] * len(self.rows[0])
+        self.rows.append(row)
+        return row
+
+    def __str__(self) -> str:
+        ncols = len(self.rows[0])
+        lengths = [0] * ncols
+        for row in self.rows:
+            for col_id, entry in enumerate(row):
+                lengths[col_id] = max(lengths[col_id], wcswidth(entry))
+
+        s = "\n"
+        for i, row in enumerate(self.rows):
+            s += " "
+            if i == 0:
+                s += "\033[1m\033[4m"  # bold, underline
+            s += "│".join(" %s " % wpad(e, p) for e, p in zip(row, lengths))
+            if i == 0:
+                s += "\033[0m"
+            s += "\n"
+        return s
+
+
+@cache
+def cfg_dir() -> Path:
+    # return Path(os.environ.get("XDG_CONFIG_HOME", Path.home() / ".config")) / "infra"
+    return Path.home() / "infra"  # XXX
+
+
+def load_cfg() -> dict:
+    fpath = cfg_dir() / "infra.toml"
+    with open(fpath, "r") as f:
+        return toml.load(f)
+
+
+def parse_chk(s: str) -> tuple[int, int]:
+    chksum, size, _ = s.split(maxsplit=3)
+    return (int(chksum), int(size))
+
+
+@dataclass
+class ModStatus:
+    packages: list[tuple[str, bool]]
+    dirs: list[tuple[Dir, Dir]]
+    files: list[tuple[File, File]]
+    services: list[tuple[str, str, str, bool]]
+
+
+@dataclass
+class MachineStatus:
+    name: str
+    status: ModStatus
+
+
+def get_module_status(data, name: str, mod_id: str):
+    has_changes = False
+    mod = data["mods"][mod_id]
+
+    packages = []
+    if requested_pkgs := mod.get("packages", []):
+        rstat = ssh_exec_text(name, ["pacman", "-Qq"] + requested_pkgs)
+        remote_pkgs = set(rstat.stdout.split())
+        missing_pkgs = set(requested_pkgs) - remote_pkgs
+        if missing_pkgs:
+            has_changes = True
+        for pkg in requested_pkgs:
+            packages.append((pkg, pkg in missing_pkgs))
+
+    # Local files
+    files_spec = mod.get("files", [])
+    srcdir = cfg_dir() / "targets" / name
+    src_files = []
+    for file_spec in files_spec:
+        path = file_spec["src"]
+        local_path = srcdir / path
+        perms = file_spec.get("perms", 0o644)
+        usr, grp = file_spec.get("own", "root:root").split(":", maxsplit=1)
+        r = subprocess.run(["cksum", local_path], text=True, capture_output=True)
+        if r.returncode != 0:
+            raise Exception(f"File not found (probably): {local_path}")
+        chk = parse_chk(r.stdout)
+        file = File(local_path, perms, usr, grp, chk)
+        src_files.append(file)
+
+    # Remote files
+    dst_files = []
+    for file_spec in files_spec:
+        path = file_spec["dst"]
+        rstat = ssh_exec_text(name, ["stat", "-c", "'%U %G %a'", path])
+        rchk = ssh_exec_text(name, ["cksum", path])
+        file = File(Path(path))
+        if rstat.returncode == 0:
+            assert rchk.returncode == 0
+            file.usr, file.grp, perms = rstat.stdout.split(maxsplit=3)
+            file.perms = int(perms, 8)
+            file.chk = parse_chk(rchk.stdout)
+        dst_files.append(file)
+
+    # Local files vs remote files
+    files = []
+    for src, dst in zip(src_files, dst_files):
+        files.append((src, dst))
+        has_changes |= src.sig != dst.sig
+
+    # Local dirs
+    dirs_spec = mod.get("dirs", [])
+    src_dirs = []
+    for dir_spec in dirs_spec:
+        path = dir_spec["path"]
+        perms = dir_spec.get("perms", 0o644)
+        usr, grp = dir_spec.get("own", "root:root").split(":", maxsplit=1)
+        src_dirs.append(Dir(path, perms, usr, grp))
+
+    # Remote dirs
+    dst_dirs = []
+    for dir_spec in dirs_spec:
+        path = dir_spec["path"]
+        rstat = ssh_exec_text(name, ["stat", "-c", "'%U %G %a'", path])
+        dir = Dir(Path(path))
+        if rstat.returncode == 0:
+            dir.usr, dir.grp, perms = rstat.stdout.split(maxsplit=3)
+            dir.perms = int(perms, 8)
+        dst_dirs.append(dir)
+
+    # Local dirs vs remote dirs
+    dirs = []
+    for src, dst in zip(src_dirs, dst_dirs):
+        dirs.append((src, dst))
+        has_changes |= src.sig != dst.sig
+
+    services = []
+    for service in mod.get("services", []):
+        r_enabled = ssh_exec_text(name, ["systemctl", "is-enabled", service])
+        r_active = ssh_exec_text(name, ["systemctl", "is-active", service])
+        is_enabled = r_enabled.stdout.rstrip()
+        is_active = r_active.stdout.rstrip()
+        need_restart = r_enabled.returncode or r_active.returncode or has_changes
+        services.append((service, is_enabled, is_active, need_restart))
+
+    return ModStatus(packages, dirs, files, services)
+
+
+def get_machine_status(data, name: str, target) -> MachineStatus:
+    merged = ModStatus([], [], [], [])
+    for mod_id in target.get("mods", []):
+        status = get_module_status(data, name, mod_id)
+        merged.packages += status.packages
+        merged.dirs += status.dirs
+        merged.files += status.files
+        merged.services += status.services
+    return MachineStatus(name, merged)
+
+
+def report_machine(mstatus: MachineStatus):
+    print(f"\n# {mstatus.name}\n")
+    st = mstatus.status
+
+    if st.packages:
+        print("## Packages")
+        for package, missing in sorted(st.packages):
+            icon = get_icon(not missing)
+            print(f"  {icon} {package}")
+        print()
+
+    if st.dirs:
+        print("## Directories")
+        table = Table("Path", "Perms", "User", "Group")
+        for src, dst in sorted(st.dirs, key=lambda d: d[1].path):
+            row = table.add_row()
+            row[0] = get_icon(src.sig == dst.sig) + " " + dst.path.as_posix()
+            row[1] = get_report(src.perms, dst.perms, fmt=lambda x: format(x, "o"))
+            row[2] = get_report(src.usr, dst.usr)
+            row[3] = get_report(src.grp, dst.grp)
+        print(table)
+
+    if st.files:
+        print("## Files")
+        table = Table("Path", "Perms", "User", "Group", "Content")
+        for src, dst in sorted(st.files, key=lambda f: f[1].path):
+            row = table.add_row()
+            row[0] = get_icon(src.sig == dst.sig) + " " + dst.path.as_posix()
+            row[1] = get_report(src.perms, dst.perms, fmt=lambda x: format(x, "o"))
+            row[2] = get_report(src.usr, dst.usr)
+            row[3] = get_report(src.grp, dst.grp)
+            row[4] = get_report(src.chk, dst.chk, fmt=lambda x: "%08x" % x[0])
+        print(table)
+
+    if st.services:
+        print("## Services")
+        table = Table("Service", "Active", "Enabled", "Need restart")
+        for service, is_enabled, is_active, need_restart in sorted(st.services):
+            row = table.add_row()
+            ok = (is_enabled, is_active, need_restart) == ("enabled", "active", False)
+            row[0] = get_icon(ok) + " " + service
+            row[1] = is_active
+            row[2] = is_enabled
+            row[3] = "yes" if need_restart else "no"
+        print(table)
+
+
+def get_icon(ok: bool) -> str:
+    return "✅" if ok else "🟠"
+
+
+def get_report(src, dst, fmt: Callable | None = None) -> str:
+    diff = src != dst
+    if fmt is not None:
+        src = fmt(src)
+        if dst is not None:
+            dst = fmt(dst)
+    if dst is None:
+        dst = "ø"
+    return f"{dst} → {src}" if diff else src
+
+
+@dataclass
+class Cmd:
+    host: str
+    desc: str
+    args: list[str]
+
+    def execute(self, dry: bool):
+        # print(f"{self.host}: {self.desc}")
+        cmd = " ".join(self.args)
+        if dry:
+            print(f"{self.host} would exec: {cmd}")
+        else:
+            # TODO
+            print(f"{self.host} exec: {cmd}")
+
+
+def build_cmd_queue(mstatus: MachineStatus) -> list[Cmd]:
+    cmds = []
+    st = mstatus.status
+    name = mstatus.name
+
+    missing = sorted(pkg for pkg, missing in st.packages if missing)
+    if missing:
+        args = ["pacman", "-Sy", "--noconfirm"] + missing
+        cmds.append(Cmd(name, "Install missing packages", args))
+
+    for src, dst in sorted(st.dirs, key=lambda d: d[1].path):
+        if None in (dst.perms, dst.usr, dst.grp):
+            args = ["mkdir", "-p", dst.path.as_posix()]
+            cmds.append(Cmd(name, "Create directory", args))
+        if src.perms != dst.perms:
+            args = ["chmod", format(src.perms, "o"), dst.path.as_posix()]
+            cmds.append(Cmd(name, "Set directory permissions", args))
+        if src.usr != dst.usr or src.grp != dst.grp:
+            args = ["chown", f"{src.usr}:{src.grp}", dst.path.as_posix()]
+            cmds.append(Cmd(name, "Set directory ownership", args))
+
+    for src, dst in sorted(st.files, key=lambda f: f[1].path):
+        if src.chk != dst.chk:
+            dst_file = get_host(name) + f":{dst.path.as_posix()}"
+            args = ["scp", src.path.as_posix(), dst_file]
+            cmds.append(Cmd(name, "Upload file", args))
+        if src.perms != dst.perms:
+            args = ["chmod", format(src.perms, "o"), dst.path.as_posix()]
+            cmds.append(Cmd(name, "Set file permissions", args))
+        if src.usr != dst.usr or src.grp != dst.grp:
+            args = ["chown", f"{src.usr}:{src.grp}", dst.path.as_posix()]
+            cmds.append(Cmd(name, "Set file ownership", args))
+
+    for service, is_enabled, is_active, need_restart in sorted(st.services):
+        if not is_active or not is_enabled:
+            args = ["systemctl", "enable", "--now", service]
+            cmds.append(Cmd(name, "Enable service now", args))
+        elif need_restart:
+            # XXX systemctl check?
+            # XXX systemctl reload?
+            args = ["systemctl", "restart", service]
+            cmds.append(Cmd(name, "Restart service", args))
+
+    return cmds
+
+
+@cache
+def get_host(name: str) -> str:
+    return f"root@{name}"
+
+
+@cache
+def ssh_cmd(name: str) -> list[str]:
+    return ["ssh", "-o", f"ControlPath=/tmp/sock-{name}", get_host(name)]
+
+
+def ssh_exec(name: str, cmd: list[str]):
+    subprocess.run(ssh_cmd(name) + cmd, capture_output=True)
+
+
+def ssh_exec_text(name: str, cmd: list[str]):
+    return subprocess.run(ssh_cmd(name) + cmd, text=True, capture_output=True)
+
+
+def ssh_open(name: str):
+    ssh_exec(name, ["-MNf"])
+
+
+def ssh_exit(name: str):
+    ssh_exec(name, ["-O", "exit"])
+
+
+class WorkerProbe(threading.Thread):
+    def __init__(self, data, name, target):
+        super().__init__()
+        self.name = name
+        self._data = data
+        self._target = target
+        self.result: MachineStatus | None = None
+
+    def run(self):
+        print(f"→ Probing info for {self.name}...")
+        try:
+            self.result = get_machine_status(self._data, self.name, self._target)
+        except Exception:
+            traceback.print_exc()
+        else:
+            print(f"← Got info from {self.name}")
+
+
+def probe_info() -> list[MachineStatus]:
+    data = load_cfg()
+
+    threads = []
+    for name, target in data.get("targets", {}).items():
+        threads.append(WorkerProbe(data, name, target))
+
+    for t in threads:
+        ssh_open(t.name)
+        t.start()
+
+    for t in threads:
+        t.join()
+        ssh_exit(t.name)
+
+    return [t.result for t in threads if t.result is not None]
+
+
+def cmd_check():
+    results = probe_info()
+    for result in results:
+        report_machine(result)
+
+
+def cmd_dryrun():
+    results = probe_info()
+    for result in results:
+        queue = build_cmd_queue(result)
+        for cmd in queue:
+            cmd.execute(dry=True)
+
+
+def cmd_run():
+    results = probe_info()
+    for result in results:
+        queue = build_cmd_queue(result)
+        for cmd in queue:
+            cmd.execute(dry=False)
+
+
+def main():
+    parser = argparse.ArgumentParser()
+    parser.add_argument(
+        "command",
+        choices=["check", "dryrun", "run"],
+        help="Command",
+    )
+    args = parser.parse_args()
+
+    if args.command == "check":
+        cmd_check()
+    elif args.command == "dryrun":
+        cmd_dryrun()
+    elif args.command == "run":
+        cmd_run()
+
+
+if __name__ == "__main__":
+    main()
