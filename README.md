@@ -81,6 +81,8 @@ on `stow`.
   (works with spaces)
 - [i3mvws](bin/i3mvws): move all the windows from one workspace to another
     + `i3mvws 7 2` will move all windows in workspace 7 to workspace 2
+- [infractl](bin/infractl): simple and efficient infra controller because
+  ansible sucks
 - [kcheck](bin/kcheck): check if the current running kernel is matching the
   installed package (Archlinux only) in order to see if I need a reboot
 - [kbd](bin/kbd): hack to force X11 keyboard config (if messed up because of
