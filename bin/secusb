@@ -19,6 +19,7 @@ if [ "$cmd" = "mount" ]; then
     udisksctl unlock -b "$SECUSB_DEVICE"
     udisksctl mount -b  "$(get_partition)"
 elif [ "$cmd" = "umount" ]; then
+    sync
     udisksctl unmount -b "$(get_partition)"
     udisksctl lock -b "$SECUSB_DEVICE"
 elif [ "$cmd" = "pull" ]; then
