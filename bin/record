@@ -23,7 +23,7 @@ if [ $# -ne 1 ]; then
 fi
 
 base_name=$1
-ofile="$base_name.mp4"
+ofile="$(date +%F-%H%M%S)-$base_name.mp4"
 
 if [ "$XDG_SESSION_TYPE" = "wayland" ]; then
     cmd="wf-recorder"
