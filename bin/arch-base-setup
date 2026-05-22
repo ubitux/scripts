@@ -47,4 +47,24 @@ systemctl enable --now systemd-oomd
 
 sed 's/^#Color$/Color/' -i /etc/pacman.conf
 
-pacman -Syu --needed openssh git sudo
+pacman -Syu --needed openssh git sudo fish
+
+# Create user
+user=ux
+if ! id $user; then
+  set -- -s /bin/fish $user
+  if [ ! -d /home/$user ]; then
+    useradd -m "$@"
+  else
+    useradd "$@"
+  fi
+  passwd $user
+fi
+# uucp for serial
+# wheel for sudo
+usermod -a -G power,log,wheel,uucp $user
+
+# Add it to sudoers
+echo '%wheel ALL=(ALL) ALL' > /etc/sudoers.d/wheel
+chmod 0440 /etc/sudoers.d/wheel
+visudo -c
