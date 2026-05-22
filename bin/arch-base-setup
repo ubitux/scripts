@@ -1,0 +1,50 @@
+#!/bin/sh
+
+set -ue
+
+if [ $# -ne 1 ]; then
+  echo "Usage: $0 <hostname>" 1>&2
+  exit 1
+fi
+
+if [ "$(id -u)" -ne 0 ]; then
+  echo "This script needs to be executed as root" 1>&2
+  exit 1
+fi
+
+set -x
+
+sed 's/^#\(en_US.UTF-8 UTF-8\)/\1/' -i /etc/locale.gen
+locale-gen
+localectl set-locale LANG=en_US.UTF-8
+
+hostnamectl set-hostname "$1"
+
+timedatectl set-timezone Europe/Paris
+timedatectl set-ntp true
+
+# Network
+wired_net_file=/etc/systemd/network/wired.network
+if [ ! -f $wired_net_file ]; then
+  cat <<EOF > $wired_net_file
+[Match]
+Name=en*
+
+[Network]
+DHCP=yes
+EOF
+  systemctl enable --now systemd-networkd
+  echo "nameserver 1.1.1.1" > /etc/resolv.conf
+fi
+
+# prevent the 10 min PAM timeout on login fail
+sed 's/# deny.*/deny = 0/' -i /etc/security/faillock.conf
+
+# creates /etc/X11/xorg.conf.d/00-keyboard.conf
+localectl set-x11-keymap eu "" "" compose:rctrl
+
+systemctl enable --now systemd-oomd
+
+sed 's/^#Color$/Color/' -i /etc/pacman.conf
+
+pacman -Syu --needed openssh git sudo

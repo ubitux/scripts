@@ -43,6 +43,7 @@ on `stow`.
   device, and append the "quick notes" into the local notes scratchpad, then
   delete the file from the device
     + depends on the [config](#Config) and `mtp_mount`
+- [arch-base-setup](bin/arch-base-setup): post-install script with bare minimum
 - [arec](bin/arec): record an opus file from the mic input (made for Anki
   because the flatpak recording doesn't work for some reason)
 - [backup](bin/backup): interrogate one backup (wrapper on top of `restic`)
