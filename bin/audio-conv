@@ -2,13 +2,22 @@
 
 set -eu
 
+format=mp3
+while getopts 'f:' option; do
+    case $option in
+        f) format=$OPTARG ;;
+        *) exit 2 ;;
+    esac
+done
+shift $((OPTIND - 1))
+
 src=${1:-.}
 dst=${2:-/tmp/out}
 
 cd "$src"
 
-find -regextype posix-egrep -iregex '.*\.(mp3|flac|wav|ogg)' | while read ifile; do
-    ofile="${ifile%.*}.mp3"
+find -regextype posix-egrep -iregex '.*\.(mp3|opus|flac|wav|ogg)' | while read ifile; do
+    ofile="${ifile%.*}.$format"
     opath="$dst/$ofile"
     if [ -f "$opath" ]; then
         echo "SKIP $opath"
@@ -20,6 +29,6 @@ find -regextype posix-egrep -iregex '.*\.(mp3|flac|wav|ogg)' | while read ifile;
         cp "$ifile" "$opath"
     else
         echo "CONVERT $ifile -> $opath"
-        ffmpeg -nostdin -v error -i "$ifile" -map 0:a -b:a 128k "$opath"
+        ffmpeg -nostdin -v error -i "$ifile" -map 0:a "$opath"
     fi
 done

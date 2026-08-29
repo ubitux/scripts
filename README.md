@@ -66,8 +66,9 @@ on `stow`.
 - [c](bin/c): calendar integration with `remind` and my notes (`rem` specs is
   extracted from a markdown quote); it watches for changes on the file and
   reload the calendar view when it happens
-- [conv-to-mp3](bin/conv-to-mp3): find all music files and convert them to
-  mp3 (if needed, with FFmpeg), preserving the file tree.
+- [audio-conv](bin/audio-conv): find all music files and convert them to MP3
+  by default or another FFmpeg-supported format with `audio-conv -f <format>`,
+  preserving the file tree.
 - [fixday](bin/fixday): if I run `newday` too late, I can fix it with this
   script.
 - [float2rgb](bin/float2rgb): convert `r,g,b` to `#RRGGBB` format where `r`,
