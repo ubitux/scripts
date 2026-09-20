@@ -83,7 +83,7 @@ on `stow`.
     + `i3mvws 7 2` will move all windows in workspace 7 to workspace 2
 - [kcheck](bin/kcheck): check if the current running kernel is matching the
   installed package (Archlinux only) in order to see if I need a reboot
-- [kdb](bin/kdb): hack to force X11 keyboard config (if messed up because of
+- [kbd](bin/kbd): hack to force X11 keyboard config (if messed up because of
   fcitx typically)
 - [kp](bin/kp): key pass wrapper
     + depends on the [config](#Config)
