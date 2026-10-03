@@ -318,7 +318,7 @@ class _Blog:
         entry_foot = self._TPL_FOOTER.format(cfg=cfg) + self._INDEX_LINK
         for entry in self._entries:
             ofile = cfg.www_dir / entry.ofile_rel
-            print("   writing %-35s -> %s" % (entry.ifile, ofile))
+            print(f"   writing {entry.ifile!s:<35} -> {ofile}")
             keywords = ", ".join(entry.tags)
             ogp = _OGP(entry.title, entry.ofile_rel, entry.img) if entry.img else None
             with open(ofile, "w") as page:
@@ -407,7 +407,7 @@ class _Blog:
         blank_index = cfg.www_dir / "x" / "index.html"
         all_index_pages = set(index_pages + [blank_index])
         for f in dst_index_pages - all_index_pages:
-            print("   rm %s" % f)
+            print(f"   rm {f}")
             os.unlink(f)
 
         print("\n:: cleanup unused post pages")
@@ -415,7 +415,7 @@ class _Blog:
         blank_post = cfg.www_dir / "p" / "index.html"
         all_post_pages = set(post_pages + [blank_post])
         for f in dst_post_pages - all_post_pages:
-            print("   rm %s" % f)
+            print(f"   rm {f}")
             os.unlink(f)
 
 
