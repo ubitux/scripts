@@ -421,7 +421,7 @@ class _Blog:
 
 def _run_cmd(cmd: list[str | Path]):
     print(cmd)
-    subprocess.run(cmd)
+    subprocess.run(cmd, check=True)
 
 
 def _serv(cfg: _Config):
