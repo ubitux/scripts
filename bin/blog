@@ -110,9 +110,8 @@ class _Entry:
         dtime = header_data["date"]
         content = _MD.render(rawcontent.lstrip())
         img = header_data.get("img")
-        if img:
-            if not (ifile.parent / img).exists():
-                raise Exception(f"{img} not found")
+        if img and not (ifile.parent / img).exists():
+            raise Exception(f"{img} not found")
         return cls(ifile, index, dtime, title, tags, disabled, content, img)
 
     @cached_property
