@@ -140,35 +140,29 @@ class _Entry:
             content = content.replace(f'{tag}="/', f'{tag}="{url}')
         desc = escape(content)
         return (
-            dedent(
-                f"""\
+            dedent(f"""\
                 <item>
                  <guid>{guid}</guid>
                  <link>{link}</link>
                  <title>{self.title}</title>
                  <pubDate>{date}</pubDate>
-                 <description>"""
-            )
+                 <description>""")
             + desc
-            + dedent(
-                """
+            + dedent("""
                  </description>
-                </item>"""
-            )
+                </item>""")
         )
 
     @cached_property
     def html(self):
         tags = ", ".join(f'<a href="/x/index-{t}.html">{t}</a>' for t in self.tags)
-        head = dedent(
-            f"""\
+        head = dedent(f"""\
                 <h1>{self.title}</h1>
                 <div id="meta-article">
                  <div class="date">{self.date}</div>
                  <div class="tags">{tags}</div>
                 </div>
-            """
-        )
+            """)
         return head + f"<article>{self.content}</article>\n"
 
 
@@ -176,8 +170,7 @@ class _Blog:
     __slots__ = ("_cfg", "_entries", "_keywords")
 
     _INDEX_LINK = '<p>← <a href="/index.html">index</a></p>'
-    _MATH_JS = dedent(
-        """
+    _MATH_JS = dedent("""
         <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.22/dist/katex.min.css" integrity="sha384-5TcZemv2l/9On385z///+d7MSYlvIEw9FuZTIdZ14vJLqWphw7e7ZPuOiCHJcFCP" crossorigin="anonymous">
         <script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.22/dist/katex.min.js" integrity="sha384-cMkvdD8LoxVzGF/RPUKAcvmm49FQ0oxwDF3BGKtDXcEc+T1b2N+teh/OJfpU0jr6" crossorigin="anonymous"></script>
         <script>
@@ -189,15 +182,11 @@ class _Blog:
             element.innerHTML = katex.renderToString(element.innerText, {displayMode: display_mode});
           }
         });
-        </script>"""
-    )
-    _SHADER_JS = dedent(
-        """
+        </script>""")
+    _SHADER_JS = dedent("""
         <script src="https://cdn.jsdelivr.net/npm/virtual-webgl@1.0.7"></script>
-        <script type="module" src="/shader.js"></script>"""
-    )
-    _TPL_BASE = dedent(
-        """\
+        <script type="module" src="/shader.js"></script>""")
+    _TPL_BASE = dedent("""\
         <!doctype html>
         <html lang="en">
          <head>
@@ -217,11 +206,9 @@ class _Blog:
          {cfg.page_footer}
          </footer>
          </body>
-        </html>"""
-    )
+        </html>""")
 
-    _TPL_RSS = dedent(
-        """\
+    _TPL_RSS = dedent("""\
         <?xml version="1.0" encoding="utf-8"?>
         <rss version="2.0">
          <channel xmlns:atom="http://www.w3.org/2005/Atom">
@@ -231,23 +218,18 @@ class _Blog:
           <link>http://{cfg.domain}/</link>
         {content}
          </channel>
-        </rss>"""
-    )
+        </rss>""")
 
-    _TPL_INDEX_ENTRY = dedent(
-        """\
+    _TPL_INDEX_ENTRY = dedent("""\
         <article class="ref">
          <a class="title" href="/{e.href}">{e.title}</a>
          <div class="meta-index"><div class="date">{e.date}</div> <div class="tags">{tags}</div></div>
-        </article>"""
-    )
+        </article>""")
 
-    _TPL_FOOTER = dedent(
-        """\
+    _TPL_FOOTER = dedent("""\
          <hr>
          {cfg.article_footer}
-        """
-    )
+        """)
 
     def __init__(self, cfg: _Config):
         self._cfg = cfg
@@ -295,8 +277,7 @@ class _Blog:
         assert not path.exists()
         date = datetime.datetime.now().isoformat()
         date, _ = date.rsplit(".", maxsplit=1)  # drop .XXXXXX
-        content = dedent(
-            f"""\
+        content = dedent(f"""\
             +++
             title = "The Title"
             date = {date}
@@ -304,8 +285,7 @@ class _Blog:
             disabled = true
             +++
 
-            """
-        )
+            """)
         with open(path, "w") as f:
             f.write(content)
         print(f"created {path}")
