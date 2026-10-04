@@ -114,7 +114,7 @@ class _Entry:
         content = _MD.render(rawcontent.lstrip())
         img = header_data.get("img")
         if img and not (ifile.parent / img).exists():
-            raise Exception(f"{img} not found")
+            raise FileNotFoundError(f"{img} not found")
         code_langs = set(re.findall(r"^```([^\s]+)", rawcontent, re.MULTILINE))
         return cls(ifile, index, dtime, title, tags, disabled, content, img, code_langs)
 
