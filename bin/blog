@@ -311,7 +311,7 @@ class _Blog:
         index = next(iter(self._entries)).index + 1 if self._entries else 1
         path = self._cfg.src_content / f"{index:03}-{base_name}.md"
         assert not path.exists()
-        date = datetime.datetime.now().isoformat()
+        date = datetime.datetime.now(datetime.UTC).isoformat()
         date, _ = date.rsplit(".", maxsplit=1)  # drop .XXXXXX
         content = dedent(f"""\
             +++
