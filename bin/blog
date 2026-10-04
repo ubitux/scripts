@@ -104,7 +104,7 @@ class _Entry:
             rawcontent = f.read()
         assert rawcontent.startswith(cls._HEADER_MARKER)
         rawcontent = rawcontent.removeprefix(cls._HEADER_MARKER)
-        header, rawcontent = rawcontent.split(cls._HEADER_MARKER)
+        header, rawcontent = rawcontent.split(cls._HEADER_MARKER, 1)
         header_data = tomllib.loads(header)
         index = int(ifile.name.split("-", maxsplit=1)[0])
         title = header_data["title"]
