@@ -275,19 +275,19 @@ class _Blog:
 
     def get_meta(self, keywords, fedi, ogp=None):
         data = [
-            dict(charset="UTF-8"),
-            dict(name="keywords", content=keywords),
-            dict(name="viewport", content="width=device-width, initial-scale=1.0"),
+            {"charset": "UTF-8"},
+            {"name": "keywords", "content": keywords},
+            {"name": "viewport", "content": "width=device-width, initial-scale=1.0"},
         ]
         if fedi:
-            data.append(dict(property="fediverse:creator", content=fedi))
+            data.append({"property": "fediverse:creator", "content": fedi})
         if ogp:
             base_url = f"https://{self._cfg.domain}"
             data += [
-                dict(property="og:title", content=ogp.title),
-                dict(property="og:type", content="article"),
-                dict(property="og:url", content=f"{base_url}/{ogp.url}"),
-                dict(property="og:image", content=f"{base_url}/{ogp.image}"),
+                {"property": "og:title", "content": ogp.title},
+                {"property": "og:type", "content": "article"},
+                {"property": "og:url", "content": f"{base_url}/{ogp.url}"},
+                {"property": "og:image", "content": f"{base_url}/{ogp.image}"},
             ]
         t = [" ".join(f'{k}="{v}"' for k, v in d.items()) for d in data]
         return "\n".join(f"  <meta {meta}>" for meta in t)
