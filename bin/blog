@@ -474,17 +474,16 @@ def _serv(cfg: _Config):
 
 def _main():
     cfg = _Config.get()
-    blog = _Blog(cfg)
     if len(sys.argv) < 2:
         print(f"{sys.argv[0]} <gen|new|serv|sync>")
         return
     match sys.argv[1]:
         case "gen":
-            blog.update_staging(cfg)
+            _Blog(cfg).update_staging(cfg)
         case "new":
             if len(sys.argv) != 3:
                 print("Usage: {sys.argv[0]} new <identifier>")
-            blog.new_post(sys.argv[2])
+            _Blog(cfg).new_post(sys.argv[2])
         case "serv":
             _serv(cfg)
         case "sync":
