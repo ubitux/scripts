@@ -3,11 +3,13 @@
 import datetime
 import email.utils
 import os
+import re
 import subprocess
 import sys
 import tomllib
 import unicodedata
 import urllib.parse
+import urllib.request
 from collections import Counter
 from dataclasses import dataclass
 from functools import cached_property
@@ -92,6 +94,7 @@ class _Entry:
     disabled: bool
     content: str
     img: Path | None
+    code_langs: set[str]
 
     _HEADER_MARKER = "+++\n"
 
@@ -112,7 +115,8 @@ class _Entry:
         img = header_data.get("img")
         if img and not (ifile.parent / img).exists():
             raise Exception(f"{img} not found")
-        return cls(ifile, index, dtime, title, tags, disabled, content, img)
+        code_langs = set(re.findall(r"^```([^\s]+)", rawcontent, re.MULTILINE))
+        return cls(ifile, index, dtime, title, tags, disabled, content, img, code_langs)
 
     @cached_property
     def date(self) -> str:
@@ -192,8 +196,6 @@ class _Blog:
           <title>{title}</title>
           <link rel="icon" type="image/png" href="/favicon.png">
           <link href="/rss.xml" rel="alternate" type="application/rss+xml" title="{cfg.domain}">
-          <link rel="stylesheet" href="/github-dark.min.css">
-          <script defer src="/highlight.min.js" onload="hljs.highlightAll();"></script>
           <link rel="stylesheet" type="text/css" href="/style.css">{js}
          </head>
          <body>
@@ -234,6 +236,42 @@ class _Blog:
         self._entries = self._find_content(cfg.src_content)
         c = Counter(sorted(tag for entry in self._entries for tag in entry.tags))
         self._keywords = ", ".join(tag for tag, _ in c.most_common())
+
+    def get_hljs_js(self, languages: set[str], version="11.12.0") -> str:
+        if not languages:
+            return ""
+        hljs_url = f"https://cdnjs.cloudflare.com/ajax/libs/highlight.js/{version}"
+
+        def download(filename: str) -> str:
+            relative_path = Path("assets") / f"hljs-{version}" / filename
+            path = self._cfg.www_dir / relative_path
+            if not path.exists():
+                url = f"{hljs_url}/{filename}"
+                print(f"   downloading {url}")
+                with urllib.request.urlopen(url) as resp:
+                    data = resp.read()
+                path.parent.mkdir(parents=True, exist_ok=True)
+                path.write_bytes(data)
+            return f"/{relative_path.as_posix()}"
+
+        css = download("styles/github-dark.min.css")
+        core = download("es/core.min.js")
+        script = [f'import hljs from "{core}";']
+        regs = []
+        for language in sorted(languages):
+            identifier = "lang_" + language.replace("-", "_")
+            url = download(f"es/languages/{language}.min.js")
+            script.append(f'import {identifier} from "{url}";')
+            regs.append(f'hljs.registerLanguage("{language}", {identifier});')
+        script.extend(regs)
+        script.append("hljs.highlightAll();")
+        tags = [
+            f'<link rel="stylesheet" href="{css}">',
+            '<script type="module">',
+            *script,
+            "</script>",
+        ]
+        return "\n" + "\n".join(tags)
 
     def get_meta(self, keywords, fedi, ogp=None):
         data = [
@@ -322,7 +360,7 @@ class _Blog:
             ogp = _OGP(entry.title, entry.ofile_rel, entry.img) if entry.img else None
             with open(ofile, "w") as page:
                 content = entry_head + entry.html + entry_foot
-                js = ""
+                js = self.get_hljs_js(entry.code_langs)
                 js += self._SHADER_JS if 'class="shader-canvas"' in content else ""
                 js += self._MATH_JS if 'class="math' in content else ""
                 js = indent(js, "  ")
