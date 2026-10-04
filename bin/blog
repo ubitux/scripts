@@ -2,6 +2,7 @@
 
 import datetime
 import email.utils
+import hashlib
 import os
 import re
 import subprocess
@@ -170,7 +171,7 @@ class _Entry:
 
 
 class _Blog:
-    __slots__ = ("_cfg", "_entries", "_keywords")
+    __slots__ = ("_cfg", "_entries", "_keywords", "_style_hash")
 
     _INDEX_LINK = '<p>← <a href="/index.html">index</a></p>'
     _MATH_JS = dedent("""
@@ -196,7 +197,7 @@ class _Blog:
           <title>{title}</title>
           <link rel="icon" type="image/png" href="/favicon.png">
           <link href="/rss.xml" rel="alternate" type="application/rss+xml" title="{cfg.domain}">
-          <link rel="stylesheet" type="text/css" href="/style.css">{js}
+          <link rel="stylesheet" type="text/css" href="/style.css?v={style_hash}">{js}
          </head>
          <body>
          <div id="content">
@@ -342,6 +343,9 @@ class _Blog:
         bin_dir = Path(__file__).resolve().parent
         data_dir = bin_dir.parent / "share" / "blog"
         _run_cmd(["rsync", "-av", str(data_dir) + "/.", cfg.www_dir])
+        self._style_hash = hashlib.sha256(
+            (cfg.www_dir / "style.css").read_bytes()
+        ).hexdigest()[:12]
         post_pages = self._write_post_pages(cfg)
         index_pages = self._write_index_pages(cfg)
         self._cleanup(cfg, index_pages, post_pages)
@@ -366,6 +370,7 @@ class _Blog:
                 page.write(
                     self._TPL_BASE.format(
                         cfg=cfg,
+                        style_hash=self._style_hash,
                         title=entry.title,
                         meta=self.get_meta(keywords, cfg.fedi, ogp),
                         content=content,
@@ -411,6 +416,7 @@ class _Blog:
             f.write(
                 self._TPL_BASE.format(
                     cfg=cfg,
+                    style_hash=self._style_hash,
                     meta=self.get_meta(keywords, cfg.fedi),
                     title=title,
                     content=content,
