@@ -12,12 +12,8 @@ for line in fileinput.input():
         continue
     ip = s[0]
     loc = d.get(ip)
-    if loc is not None:
-        print(loc, line.rstrip(), flush=True)
-        continue
-    code = g.country_code_by_addr(ip)
-    if code is None:
-        d[ip] = "??"
-        continue
-    loc = "".join(chr(ord(c) + 0x1F1A5) for c in code)
-    d[ip] = loc
+    if loc is None:
+        code = g.country_code_by_addr(ip)
+        loc = "??" if code is None else "".join(chr(ord(c) + 0x1F1A5) for c in code)
+        d[ip] = loc
+    print(loc, line.rstrip(), flush=True)
