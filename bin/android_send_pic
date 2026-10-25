@@ -5,7 +5,7 @@ set -ue
 . "$(dirname "$0")/config"
 . "$(dirname "$0")/helpers/android"
 
-mtp_mount
+mtp_mount "$ANDROID_DEVICE"
 wait_device "$ANDROID_BASEDIR"
 
 cp -v "$1" "$ANDROID_PICTURES_DIR"

@@ -5,7 +5,7 @@ set -ue  # -e is very important because we don't want to remove if the data impo
 . "$(dirname "$0")/config"
 . "$(dirname "$0")/helpers/android"
 
-mtp_mount
+mtp_mount "$ANDROID_DEVICE"
 wait_device "$ANDROID_BASEDIR"
 
 [ ! -f "$ANDROID_QUICKNOTES_SRC" ] && exit 0
