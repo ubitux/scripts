@@ -3,11 +3,16 @@
 set -eu
 
 mbase=/run/user/$(id -u)/gvfs
-for x in $(gio mount -li | grep activation_root=mtp://); do
-    bname=${${x#*mtp://}%*/}
-    mpoint=$mbase/mtp:host=$bname
+
+unmount_device() {
+    local bname=$1
+    local mpoint=$mbase/mtp:host=$bname
     if [ -d $mpoint ]; then
         echo "Unmounting $bname ($mpoint)"
         gio mount -u mtp://$bname
     fi
+}
+
+for x in $(gio mount -li | grep activation_root=mtp://); do
+    unmount_device "${${x#*mtp://}%*/}"
 done
