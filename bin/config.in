@@ -2,7 +2,7 @@
 
 # Android tools: android_*
 ANDROID_DEVICE="foo_bar_12_XXXXX"
-ANDROID_BASEDIR="/run/user/$(id -u)/gvfs/mtp:host=$ANDROID_DEVICE"  # gvfs mount point for the device
+ANDROID_BASEDIR="/run/user/$(id -u)/gvfs/mtp:host=$ANDROID_DEVICE/Internal shared storage"
 ANDROID_FILEBROWSER="nnn"
 ANDROID_QUICKNOTES_SRC="$ANDROID_BASEDIR/Documents/markor/QuickNote.md"
 ANDROID_QUICKNOTES_DST="$HOME/notes/Scratchpad.md"
