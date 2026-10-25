@@ -1,7 +1,7 @@
 #!/bin/sh
 
 # Android tools: android_*
-ANDROID_BASEDIR="/run/user/1000/gvfs/mtp:host=Android_XXXXXX"  # gvfs mount point for the device
+ANDROID_BASEDIR="/run/user/$(id -u)/gvfs/mtp:host=Android_XXXXXX"  # gvfs mount point for the device
 ANDROID_FILEBROWSER="nnn"
 ANDROID_QUICKNOTES_SRC="$ANDROID_BASEDIR/Documents/markor/QuickNote.md"
 ANDROID_QUICKNOTES_DST="$HOME/notes/Scratchpad.md"
