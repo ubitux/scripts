@@ -3,7 +3,6 @@
 set -ue
 
 . "$(dirname "$0")/config"
-. "$(dirname "$0")/helpers/android"
 
 mtp_mount "$ANDROID_DEVICE"
 gio copy "$1" "$ANDROID_PICTURES_DIR"
