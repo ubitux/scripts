@@ -15,6 +15,10 @@ mount_device() {
     fi
 }
 
-for x in $(gio mount -li | grep activation_root=mtp://|grep -v keyboard); do
-    mount_device "${${x#*mtp://}%*/}"
-done
+if [ "$#" -gt 0 ]; then
+    mount_device "$1"
+else
+    for x in $(gio mount -li | grep activation_root=mtp://|grep -v keyboard); do
+        mount_device "${${x#*mtp://}%*/}"
+    done
+fi

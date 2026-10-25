@@ -95,9 +95,9 @@ on `stow`.
     + depends on the [config](#Config), `rofi`, and `kpl`
 - [kpl](bin/kpl): flat list of password, based on `kp`, used by `kpgui`
 - [mtp_mount](bin/mtp_mount): auto mount all MTP devices using GIO command
-  line tool (depends on `gvfs-mtp`)
+  line tool (depends on `gvfs-mtp`), or the one specified as argument
 - [mtp_umount](bin/mtp_umount): auto umount all MTP devices using GIO command
-  line tool (depends on `gvfs-mtp`)
+  line tool (depends on `gvfs-mtp`), or the one specified as argument
 - [music_clean_dir](bin/music_clean_dir): music from the Internet is usually
   polluted with various form of garbage, this script gets rid of it
 - [music_st](bin/music_st): add audio stream from a YouTube URL (or similar)
