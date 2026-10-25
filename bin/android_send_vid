@@ -6,6 +6,4 @@ set -ue
 . "$(dirname "$0")/helpers/android"
 
 mtp_mount "$ANDROID_DEVICE"
-wait_device "$ANDROID_BASEDIR"
-
-cp -v "$1" "$ANDROID_VIDEOS_DIR"
+gio copy "$1" "$ANDROID_VIDEOS_DIR"
