@@ -159,6 +159,3 @@ appropriately.
 
 [bezier]: http://blog.pkh.me/p/33-deconstructing-be%CC%81zier-curves.html
 [simd-aarch64]: https://fosstodon.org/@bug/109366202667278893
-
-
-## Config
