@@ -7,7 +7,8 @@ set -eu
 f=$(shotl "$@")
 test -z "$f" && exit 1
 if scp "$f" "$SHOT_HOST:$SHOT_DST"; then
-    echo "Shot: $SHOT_URL/$(urlencode "$f")"
+    fname=$(basename "$f")
+    echo "Shot: $SHOT_URL/$(urlencode "$fname")"
     rm -f "$f"
 else
     echo "Unable to upload $f"
