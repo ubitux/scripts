@@ -1,5 +1,6 @@
 #!/bin/sh
 
+. "$(dirname "$0")/config"
 . "$(dirname "$0")/helpers/wayland"
 
 set -eu
@@ -23,7 +24,8 @@ if [ $# -ne 1 ]; then
 fi
 
 base_name=$1
-ofile="$(date +%F-%H%M%S)-$base_name.mp4"
+mkdir -p "$RECORDS_PATH"
+ofile="$RECORDS_PATH/$(date +%F-%H%M%S)-$base_name.mp4"
 
 if [ "$XDG_SESSION_TYPE" = "wayland" ]; then
     cmd="wf-recorder"

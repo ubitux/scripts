@@ -29,6 +29,9 @@ SHOT_DST="/srv/http/screenshots/"  # where to upload the screenshots on the host
 SHOT_URL="https://screenshots.myserver.info/"  # public URL for seeing the screenshots
 SHOT_EDITOR="pinta"  # image editor (could be gimp or something else)
 
+# Video recording tool
+RECORDS_PATH="$(xdg-user-dir VIDEOS)/Recordings"
+
 # Pass tools: kp*
 KEYPASS_PATH="$HOME/keypass"  # git repository with a password store and a GNUPG dir
 KEYPASS_STORE_DIR="$KEYPASS_PATH/password-store"

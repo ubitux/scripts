@@ -117,6 +117,7 @@ on `stow`.
   locally, and eventually convert them to the specified audio format
 - [record](bin/record): capture a selection (window or free-form) or the full
   screen and reencode it into a web-shareable file, using FFmpeg
+    + depends on the [config](#Config)
 - [rgb2float](bin/rgb2float): convert `#RRGGBB` to `r,g,b` format where `r`,
   `g` and `b` are floats
 - [rssfind](bin/rssfind): find RSS links given an URL, depends on `curl` and
