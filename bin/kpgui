@@ -2,4 +2,4 @@
 
 set -eu
 
-kp -c $(kpl | rofi -dmenu -p "Copy password")
+kp -c "$(kpl | rofi -dmenu -p "Copy password")"
