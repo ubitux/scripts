@@ -23,6 +23,7 @@ PASTE_DST="/srv/http/pastes/"  # where to write the pastes on the host
 PASTE_URL="https://pastes.myserver.info/"  # public URL for accessing the pastes
 
 # Screenshot tools: shot*
+SHOT_DIR="$(xdg-user-dir PICTURES)/Screenshots"
 SHOT_HOST="myserver"  # destination host for ssh/scp
 SHOT_DST="/srv/http/screenshots/"  # where to upload the screenshots on the host
 SHOT_URL="https://screenshots.myserver.info/"  # public URL for seeing the screenshots

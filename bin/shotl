@@ -20,7 +20,8 @@ while getopts 'd:es' o; do
     esac
 done
 shift $((OPTIND-1))
-f=${1:-$(date +%F-%H%M%S)-$(pwgen).png}
+mkdir -p "$SHOT_DIR"
+f="$SHOT_DIR/${1:-$(date +%F-%H%M%S)-$(pwgen).png}"
 test -z ${delay:-} || sleep $delay
 if [ "$XDG_SESSION_TYPE" = "wayland" ]; then
     grim ${sel:-} $f && echo $f
