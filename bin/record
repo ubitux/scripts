@@ -33,7 +33,7 @@ if [ "$XDG_SESSION_TYPE" = "wayland" ]; then
     fi
 
     if [ "$audio" != 0 ]; then
-        cmd="$cmd -f pulse -ac 2 -i $audio"
+        cmd="$cmd --audio=\"$audio\""
     fi
 
     # crf=-1 is necessary to undo the default from wf-recorder
