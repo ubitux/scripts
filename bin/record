@@ -58,14 +58,13 @@ else
 fi
 
 if [ $transcode -eq 0 ]; then
-    eval "$cmd" "$ofile"
+    eval "$cmd" '"$ofile"'
 else
     tmpfile="tmp_$base_name.mp4"
-    eval "$cmd" "$tmpfile"
+    eval "$cmd" '"$tmpfile"'
 
     # cropping for non power of 2 selections
-    cmd="ffmpeg -i $tmpfile -vf 'crop=trunc(iw/2)*2:trunc(ih/2)*2' -pix_fmt yuv420p $ofile"
-    eval "$cmd"
+    ffmpeg -i "$tmpfile" -vf 'crop=trunc(iw/2)*2:trunc(ih/2)*2' -pix_fmt yuv420p "$ofile"
     rm -f "$tmpfile"
 fi
 
