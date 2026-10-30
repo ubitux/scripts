@@ -142,6 +142,8 @@ class _Entry:
         for tag in ("src", "href", "data-fragment"):
             content = content.replace(f"{tag}='/", f"{tag}='{url}")
             content = content.replace(f'{tag}="/', f'{tag}="{url}')
+            content = content.replace(f"{tag}='../", f"{tag}='{url}")
+            content = content.replace(f'{tag}="../', f'{tag}="{url}')
         desc = escape(content)
         return (
             dedent(f"""\
