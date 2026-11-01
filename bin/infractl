@@ -396,12 +396,18 @@ class WorkerProbe(threading.Thread):
         print(f"← Got info from {self.name}")
 
 
-def probe_info() -> list[MachineStatus]:
+def probe_info(targets: list[str] | None = None) -> list[MachineStatus]:
     data = load_cfg()
+    configured = data.get("targets", {})
+    if targets:
+        unknown = set(targets) - configured.keys()
+        if unknown:
+            raise SystemExit(f"Unknown targets: {', '.join(sorted(unknown))}")
 
     threads = []
-    for name, target in data.get("targets", {}).items():
-        threads.append(WorkerProbe(data, name, target))
+    for name, target in configured.items():
+        if not targets or name in targets:
+            threads.append(WorkerProbe(data, name, target))
 
     for t in threads:
         t.start()
@@ -416,22 +422,22 @@ def probe_info() -> list[MachineStatus]:
     return [t.result for t in threads if t.result is not None]
 
 
-def cmd_check():
-    results = probe_info()
+def cmd_check(targets: list[str] | None = None):
+    results = probe_info(targets)
     for result in results:
         report_machine(result)
 
 
-def cmd_dryrun():
-    results = probe_info()
+def cmd_dryrun(targets: list[str] | None = None):
+    results = probe_info(targets)
     for result in results:
         queue = build_cmd_queue(result)
         for cmd in queue:
             cmd.execute(dry=True)
 
 
-def cmd_run():
-    results = probe_info()
+def cmd_run(targets: list[str] | None = None):
+    results = probe_info(targets)
     for result in results:
         queue = build_cmd_queue(result)
         for cmd in queue:
@@ -445,14 +451,21 @@ def main():
         choices=["check", "dryrun", "run"],
         help="Command",
     )
+    parser.add_argument(
+        "-t",
+        "--target",
+        action="append",
+        metavar="NAME",
+        help="Only operate on this target (repeat for multiple targets; default: all)",
+    )
     args = parser.parse_args()
 
     if args.command == "check":
-        cmd_check()
+        cmd_check(args.target)
     elif args.command == "dryrun":
-        cmd_dryrun()
+        cmd_dryrun(args.target)
     elif args.command == "run":
-        cmd_run()
+        cmd_run(args.target)
 
 
 if __name__ == "__main__":
