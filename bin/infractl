@@ -102,9 +102,8 @@ class MachineStatus:
     status: ModStatus
 
 
-def get_module_status(data, name: str, mod_id: str):
+def get_module_status(name: str, mod):
     has_changes = False
-    mod = data["mods"][mod_id]
 
     packages = []
     if requested_pkgs := mod.get("packages", []):
@@ -197,8 +196,9 @@ def get_module_status(data, name: str, mod_id: str):
 
 def get_machine_status(data, name: str, target) -> MachineStatus:
     merged = ModStatus([], [], [], [])
-    for mod_id in target.get("mods", []):
-        status = get_module_status(data, name, mod_id)
+    mods = [data["mods"][mod_id] for mod_id in target.get("mods", [])]
+    for mod in [*mods, target]:
+        status = get_module_status(name, mod)
         merged.packages += status.packages
         merged.dirs += status.dirs
         merged.files += status.files
