@@ -43,6 +43,10 @@ def wpad(s: str, n: int) -> str:
     return s + (n - wcswidth(s)) * " "
 
 
+def yesno(v: bool) -> str:
+    return "yes" if v else "no"
+
+
 class Table:
     def __init__(self, *cols: str):
         self.rows = [list(cols)]
@@ -217,7 +221,7 @@ def report_machine(mstatus: MachineStatus):
         for package, missing in sorted(st.packages):
             row = table.add_row()
             row[0] = get_icon(not missing) + " " + package
-            row[1] = "no" if missing else "yes"
+            row[1] = yesno(not missing)
         print(table)
 
     if st.dirs:
@@ -249,7 +253,7 @@ def report_machine(mstatus: MachineStatus):
             row[0] = get_icon(ok) + " " + service
             row[1] = is_active
             row[2] = is_enabled
-            row[3] = "yes" if need_restart else "no"
+            row[3] = yesno(need_restart)
         print(table)
 
 
