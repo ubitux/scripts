@@ -44,7 +44,6 @@ def wpad(s: str, n: int) -> str:
 
 
 class Table:
-
     def __init__(self, *cols: str):
         self.rows = [list(cols)]
 
