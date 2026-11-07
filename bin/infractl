@@ -180,8 +180,14 @@ def get_module_status(name: str, mod):
         users.append((src, dst))
         has_changes |= src.sig != dst.sig
 
+    # Aggregate user files ownership
+    files_spec = mod.get("files", []) + [
+        {"own": f"{login}:{login}", **file_spec}
+        for login, user in users_spec.items()
+        for file_spec in user.get("files", [])
+    ]
+
     # Local files
-    files_spec = mod.get("files", [])
     srcdir = cfg_dir() / "targets" / name
     src_files = []
     for file_spec in files_spec:
@@ -219,8 +225,14 @@ def get_module_status(name: str, mod):
         files.append((src, dst))
         has_changes |= src.sig != dst.sig
 
+    # Aggregate user dirs ownership
+    dirs_spec = mod.get("dirs", []) + [
+        {"own": f"{login}:{login}", **dir_spec}
+        for login, user in users_spec.items()
+        for dir_spec in user.get("dirs", [])
+    ]
+
     # Local dirs
-    dirs_spec = mod.get("dirs", [])
     src_dirs = []
     for dir_spec in dirs_spec:
         path = dir_spec["path"]
