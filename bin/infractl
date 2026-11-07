@@ -141,7 +141,7 @@ def get_module_status(name: str, mod):
         rchk = ssh_exec_text(name, ["cksum", path])
         file = File(Path(path))
         if rstat.returncode == 0:
-            assert rchk.returncode == 0
+            rchk.check_returncode()
             file.usr, file.grp, perms = rstat.stdout.split(maxsplit=3)
             file.perms = int(perms, 8)
             file.chk = parse_chk(rchk.stdout)
