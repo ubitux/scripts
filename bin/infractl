@@ -54,10 +54,14 @@ class User:
 @dataclass(order=True)
 class Service:
     name: str
+    login: str = ""
 
     @property
     def cmd(self) -> list[str]:
-        return ["systemctl"]
+        args = ["systemctl"]
+        if self.login:
+            args += ["--user", f"--machine={self.login}@.host"]
+        return args
 
 
 def wpad(s: str, n: int) -> str:
@@ -243,12 +247,18 @@ def get_module_status(name: str, mod):
         dirs.append((src, dst))
         has_changes |= src.sig != dst.sig
 
+    service_specs = [Service(s) for s in mod.get("services", [])]
+    service_specs += [
+        Service(s, login)
+        for login, user in users_spec.items()
+        for s in user.get("services", [])
+    ]
     services = []
-    for service in map(Service, mod.get("services", [])):
+    for service in service_specs:
         r_enabled = ssh_exec_text(name, service.cmd + ["is-enabled", service.name])
         r_active = ssh_exec_text(name, service.cmd + ["is-active", service.name])
-        is_enabled = r_enabled.stdout.rstrip()
-        is_active = r_active.stdout.rstrip()
+        is_enabled = r_enabled.stdout.rstrip() or "unknown"
+        is_active = r_active.stdout.rstrip() or "unknown"
         need_restart = r_enabled.returncode or r_active.returncode or has_changes
         services.append((service, is_enabled, is_active, need_restart))
 
@@ -315,14 +325,15 @@ def report_machine(mstatus: MachineStatus):
         print(table)
 
     if st.services:
-        table = Table("Service", "Active", "Enabled", "Need restart")
+        table = Table("Service", "Login", "Active", "Enabled", "Need restart")
         for service, is_enabled, is_active, need_restart in sorted(st.services):
             row = table.add_row()
             ok = (is_enabled, is_active, need_restart) == ("enabled", "active", False)
             row[0] = get_icon(ok) + " " + service.name
-            row[1] = is_active
-            row[2] = is_enabled
-            row[3] = yesno(need_restart)
+            row[1] = service.login or "system"
+            row[2] = is_active
+            row[3] = is_enabled
+            row[4] = yesno(need_restart)
         print(table)
 
 
@@ -415,6 +426,9 @@ def build_cmd_queue(mstatus: MachineStatus) -> list[Cmd]:
 
     if reload_systemd:
         cmds.append(Cmd(name, "Reload systemd units", ["systemctl", "daemon-reload"]))
+        for login in sorted({s.login for s, *_ in st.services if s.login}):
+            args = Service("", login).cmd + ["daemon-reload"]
+            cmds.append(Cmd(name, "Reload user systemd units", args))
 
     for service, is_enabled, is_active, need_restart in sorted(st.services):
         if is_enabled != "enabled":
