@@ -39,6 +39,17 @@ class Dir:
         return (self.perms, self.usr, self.grp)
 
 
+@dataclass
+class User:
+    login: str
+    shell: str | None = None
+    home: str | None = None
+
+    @property
+    def sig(self):
+        return (self.shell, self.home)
+
+
 def wpad(s: str, n: int) -> str:
     return s + (n - wcswidth(s)) * " "
 
@@ -94,6 +105,7 @@ def parse_chk(s: str) -> tuple[int, int]:
 @dataclass
 class ModStatus:
     packages: list[tuple[str, bool]]
+    users: list[tuple[User, User]]
     dirs: list[tuple[Dir, Dir]]
     files: list[tuple[File, File]]
     services: list[tuple[str, str, str, bool]]
@@ -117,6 +129,34 @@ def get_module_status(name: str, mod):
             has_changes = True
         for pkg in requested_pkgs:
             packages.append((pkg, pkg in missing_pkgs))
+
+    # Local users
+    users_spec = mod.get("users", {})
+    src_users = []
+    for login, user_spec in users_spec.items():
+        src = User(
+            login,
+            user_spec.get("shell", "/bin/bash"),
+            user_spec.get("home", f"/home/{login}"),
+        )
+        src_users.append(src)
+
+    # Remote users
+    dst_users = []
+    for login in users_spec:
+        dst = User(login)
+        r = ssh_exec_text(name, ["getent", "passwd", login])
+        if r.returncode == 0:
+            *_, dst.home, dst.shell = r.stdout.rstrip().split(":")
+        elif r.returncode != 2:  # getent: key not found
+            r.check_returncode()
+        dst_users.append(dst)
+
+    # Local users vs remote users
+    users = []
+    for src, dst in zip(src_users, dst_users):
+        users.append((src, dst))
+        has_changes |= src.sig != dst.sig
 
     # Local files
     files_spec = mod.get("files", [])
@@ -194,15 +234,16 @@ def get_module_status(name: str, mod):
         need_restart = r_enabled.returncode or r_active.returncode or has_changes
         services.append((service, is_enabled, is_active, need_restart))
 
-    return ModStatus(packages, dirs, files, services)
+    return ModStatus(packages, users, dirs, files, services)
 
 
 def get_machine_status(data, name: str, target) -> MachineStatus:
-    merged = ModStatus([], [], [], [])
+    merged = ModStatus([], [], [], [], [])
     mods = [data["mods"][mod_id] for mod_id in target.get("mods", [])]
     for mod in [*mods, target]:
         status = get_module_status(name, mod)
         merged.packages += status.packages
+        merged.users += status.users
         merged.dirs += status.dirs
         merged.files += status.files
         merged.services += status.services
@@ -222,6 +263,15 @@ def report_machine(mstatus: MachineStatus):
             row = table.add_row()
             row[0] = get_icon(not missing) + " " + package
             row[1] = yesno(not missing)
+        print(table)
+
+    if st.users:
+        table = Table("Login", "Shell", "Home")
+        for src, dst in sorted(st.users, key=lambda u: u[0].login):
+            row = table.add_row()
+            row[0] = get_icon(src.sig == dst.sig) + " " + src.login
+            row[1] = get_report(src.shell, dst.shell)
+            row[2] = get_report(src.home, dst.home)
         print(table)
 
     if st.dirs:
@@ -300,6 +350,20 @@ def build_cmd_queue(mstatus: MachineStatus) -> list[Cmd]:
     if missing:
         args = ["pacman", "-Syu", "--noconfirm"] + missing
         cmds.append(Cmd(name, "Install missing packages", args))
+
+    for src, dst in sorted(st.users, key=lambda u: u[0].login):
+        if dst.home is None:
+            args = ["useradd", "-m", "-d", src.home, "-s", src.shell, "--", src.login]
+            cmds.append(Cmd(name, "Create user", args))
+        else:
+            args = ["usermod"]
+            if src.home != dst.home:
+                args += ["-d", src.home]
+            if src.shell != dst.shell:
+                args += ["-s", src.shell]
+            if len(args) > 1:
+                args += ["--", src.login]
+                cmds.append(Cmd(name, "Update user", args))
 
     for src, dst in sorted(st.dirs, key=lambda d: d[1].path):
         if None in (dst.perms, dst.usr, dst.grp):
