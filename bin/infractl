@@ -44,10 +44,11 @@ class User:
     login: str
     shell: str | None = None
     home: str | None = None
+    linger: bool = False
 
     @property
     def sig(self):
-        return (self.shell, self.home)
+        return (self.shell, self.home, self.linger)
 
 
 def wpad(s: str, n: int) -> str:
@@ -138,6 +139,7 @@ def get_module_status(name: str, mod):
             login,
             user_spec.get("shell", "/bin/bash"),
             user_spec.get("home", f"/home/{login}"),
+            user_spec.get("linger", False),
         )
         src_users.append(src)
 
@@ -150,6 +152,13 @@ def get_module_status(name: str, mod):
             *_, dst.home, dst.shell = r.stdout.rstrip().split(":")
         elif r.returncode != 2:  # getent: key not found
             r.check_returncode()
+        # loginctl show-user is not reliable for users without a session
+        rlinger = ssh_exec_text(
+            name, ["test", "-e", f"/var/lib/systemd/linger/{login}"]
+        )
+        if rlinger.returncode not in (0, 1):
+            rlinger.check_returncode()
+        dst.linger = rlinger.returncode == 0
         dst_users.append(dst)
 
     # Local users vs remote users
@@ -266,12 +275,13 @@ def report_machine(mstatus: MachineStatus):
         print(table)
 
     if st.users:
-        table = Table("Login", "Shell", "Home")
+        table = Table("Login", "Shell", "Home", "Linger")
         for src, dst in sorted(st.users, key=lambda u: u[0].login):
             row = table.add_row()
             row[0] = get_icon(src.sig == dst.sig) + " " + src.login
             row[1] = get_report(src.shell, dst.shell)
             row[2] = get_report(src.home, dst.home)
+            row[3] = get_report(src.linger, dst.linger, fmt=yesno)
         print(table)
 
     if st.dirs:
@@ -364,6 +374,9 @@ def build_cmd_queue(mstatus: MachineStatus) -> list[Cmd]:
             if len(args) > 1:
                 args += ["--", src.login]
                 cmds.append(Cmd(name, "Update user", args))
+        if src.linger != dst.linger:
+            action = "enable-linger" if src.linger else "disable-linger"
+            cmds.append(Cmd(name, "Set user linger", ["loginctl", action, src.login]))
 
     for src, dst in sorted(st.dirs, key=lambda d: d[1].path):
         if None in (dst.perms, dst.usr, dst.grp):
