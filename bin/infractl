@@ -45,10 +45,12 @@ class User:
     shell: str | None = None
     home: str | None = None
     linger: bool = False
+    groups: frozenset[str] = frozenset()
+    uid: int | None = None
 
     @property
     def sig(self):
-        return (self.shell, self.home, self.linger)
+        return (self.shell, self.home, self.linger, self.groups)
 
 
 @dataclass(order=True)
@@ -153,6 +155,7 @@ def get_module_status(name: str, mod):
             user_spec.get("shell", "/bin/bash"),
             user_spec.get("home", f"/home/{login}"),
             user_spec.get("linger", False),
+            frozenset(user_spec.get("groups", [])),
         )
         src_users.append(src)
 
@@ -162,7 +165,13 @@ def get_module_status(name: str, mod):
         dst = User(login)
         r = ssh_exec_text(name, ["getent", "passwd", login])
         if r.returncode == 0:
-            *_, dst.home, dst.shell = r.stdout.rstrip().split(":")
+            fields = r.stdout.rstrip().split(":")
+            *_, dst.home, dst.shell = fields
+            dst.uid = int(fields[2])
+            if users_spec[login].get("groups"):
+                r = ssh_exec_text(name, ["id", "-Gn", login])
+                r.check_returncode()
+                dst.groups = frozenset(r.stdout.split())
         elif r.returncode != 2:  # getent: key not found
             r.check_returncode()
         # loginctl show-user is not reliable for users without a session
@@ -177,6 +186,7 @@ def get_module_status(name: str, mod):
     # Local users vs remote users
     users = []
     for src, dst in zip(src_users, dst_users):
+        src.groups |= dst.groups
         users.append((src, dst))
         has_changes |= src.sig != dst.sig
 
@@ -306,13 +316,16 @@ def report_machine(mstatus: MachineStatus):
         print(table)
 
     if st.users:
-        table = Table("Login", "Shell", "Home", "Linger")
+        table = Table("Login", "Shell", "Home", "Linger", "Groups")
         for src, dst in sorted(st.users, key=lambda u: u[0].login):
             row = table.add_row()
             row[0] = get_icon(src.sig == dst.sig) + " " + src.login
             row[1] = get_report(src.shell, dst.shell)
             row[2] = get_report(src.home, dst.home)
             row[3] = get_report(src.linger, dst.linger, fmt=yesno)
+            row[4] = get_report(
+                src.groups, dst.groups, fmt=lambda x: ", ".join(sorted(x)) or "—"
+            )
         print(table)
 
     if st.dirs:
@@ -387,6 +400,7 @@ def build_cmd_queue(mstatus: MachineStatus) -> list[Cmd]:
     st = mstatus.status
     name = mstatus.name
     reload_systemd = False
+    restart_users = set()
 
     missing = sorted(pkg for pkg, missing in st.packages if missing)
     if missing:
@@ -406,6 +420,11 @@ def build_cmd_queue(mstatus: MachineStatus) -> list[Cmd]:
             if len(args) > 1:
                 args += ["--", src.login]
                 cmds.append(Cmd(name, "Update user", args))
+        if missing_groups := sorted(src.groups - dst.groups):
+            args = ["usermod", "-aG", ",".join(missing_groups), "--", src.login]
+            cmds.append(Cmd(name, "Add user to groups", args))
+            if dst.uid is not None and (src.linger or dst.linger):
+                restart_users.add(dst.uid)
         if src.linger != dst.linger:
             action = "enable-linger" if src.linger else "disable-linger"
             cmds.append(Cmd(name, "Set user linger", ["loginctl", action, src.login]))
@@ -435,6 +454,10 @@ def build_cmd_queue(mstatus: MachineStatus) -> list[Cmd]:
         if src.perms != dst.perms or ownership_changed or src.chk != dst.chk:
             args = ["chmod", format(src.perms, "o"), dst.path.as_posix()]
             cmds.append(Cmd(name, "Set file permissions", args))
+
+    for uid in sorted(restart_users):
+        args = ["systemctl", "restart", f"user@{uid}.service"]
+        cmds.append(Cmd(name, "Restart user manager to apply groups", args))
 
     if reload_systemd:
         cmds.append(Cmd(name, "Reload systemd units", ["systemctl", "daemon-reload"]))
