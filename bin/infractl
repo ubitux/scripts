@@ -534,18 +534,25 @@ class WorkerProbe(threading.Thread):
         print(f"← Got info from {self.name}")
 
 
-def probe_info(targets: list[str] | None = None) -> list[MachineStatus]:
-    data = load_cfg()
+def select_targets(data, targets: list[str] | None = None) -> dict:
     configured = data.get("targets", {})
     if targets:
         unknown = set(targets) - configured.keys()
         if unknown:
             raise SystemExit(f"Unknown targets: {', '.join(sorted(unknown))}")
+    return {
+        name: target
+        for name, target in configured.items()
+        if not targets or name in targets
+    }
+
+
+def probe_info(targets: list[str] | None = None) -> list[MachineStatus]:
+    data = load_cfg()
 
     threads = []
-    for name, target in configured.items():
-        if not targets or name in targets:
-            threads.append(WorkerProbe(data, name, target))
+    for name, target in select_targets(data, targets).items():
+        threads.append(WorkerProbe(data, name, target))
 
     for t in threads:
         t.start()
