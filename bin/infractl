@@ -300,11 +300,14 @@ def get_machine_status(data, name: str, target) -> MachineStatus:
     return MachineStatus(name, merged)
 
 
-def report_machine(mstatus: MachineStatus):
+def report_host(name: str):
     width = shutil.get_terminal_size().columns
-    title = f" 🖥️ {mstatus.name} "
+    title = f" 🖥️ {name} "
     print(f"\n\033[1;7m{title:<{max(0, width)}}\033[0m")  # bold + reverse video
 
+
+def report_machine(mstatus: MachineStatus):
+    report_host(mstatus.name)
     st = mstatus.status
 
     if st.packages:
