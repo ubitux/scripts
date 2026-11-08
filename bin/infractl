@@ -290,16 +290,21 @@ def get_module_status(name: str, mod):
 
 
 def get_machine_status(data, name: str, target) -> MachineStatus:
-    merged = ModStatus([], [], [], [], [])
+    merged = {key: [] for key in ("packages", "dirs", "files", "services")}
+    users = {}
     mods = [data["mods"][mod_id] for mod_id in target.get("mods", [])]
     for mod in [*mods, target]:
-        status = get_module_status(name, mod)
-        merged.packages += status.packages
-        merged.users += status.users
-        merged.dirs += status.dirs
-        merged.files += status.files
-        merged.services += status.services
-    return MachineStatus(name, merged)
+        for key, values in merged.items():
+            values.extend(mod.get(key, []))
+        for login, spec in mod.get("users", {}).items():
+            user = users.setdefault(login, {})
+            for key, value in spec.items():
+                if key in ("groups", "dirs", "files", "services"):
+                    user.setdefault(key, []).extend(value)
+                else:
+                    user[key] = value
+    merged["users"] = users
+    return MachineStatus(name, get_module_status(name, merged))
 
 
 def report_host(name: str):
